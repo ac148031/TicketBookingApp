@@ -1,86 +1,16 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Data;
-
-namespace TicketBookingApp
+﻿namespace TicketBookingApp
 {
-    public class StorageManager
+    public class Program
     {
-        private SqlConnection? connection;
-
-        public StorageManager(string connectionString)
+        static void Main(string[] args)
         {
-            try
-            {
-                connection = new SqlConnection(connectionString);
-                connection.Open();
-                Console.WriteLine("Connection Successful.");
-            }
-            catch (SqlException e)
-            {
-                Console.WriteLine("Connection Unsuccessful.");
-                Console.WriteLine(e.Message);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("An error occured while attemping to secure connection.");
-                Console.WriteLine(e.Message);
-            }
-        }
+            string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True;" +
+                "Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
 
-        public void CloseConnection()
-        {
-            if (connection != null && connection.State == ConnectionState.Open)
-            {
-                connection.Close();
-                Console.WriteLine("Connection Closed.");
-            }
-        }
+            var storageManager = new StorageManager(connectionString);
+            var view = new ConsoleView();
 
-        public List<City> CitiesSelect()
-        {
-            List<City> cities = new List<City>();
-            string sqlString = "SELECT * FROM ";
-
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        int cityId = Convert.ToInt32(reader["cityId"]);
-                        string cityName = reader["cityName"].ToString();
-                        cities.Add(new City(cityId, cityName));
-                    }
-                }
-            }
-            return cities;
-        }
-
-        public void CitiesInsert(City city)
-        {
-            string sqlString = "INSERT INTO _ VALUES ";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
-
-            }
-        }
-
-        public void CitiesDelete(City city)
-        {
-            string sqlString = "DELETE FROM _ WHERE";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
-
-            }
-        }
-
-        public void CitiesUpdate(City oldCity, City newCity)
-        {
-            string sqlString = "UPDATE _ SET ";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
-
-            }
+            view.LogInScreen();
         }
     }
 }
