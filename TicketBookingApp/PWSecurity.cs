@@ -8,9 +8,7 @@ namespace TicketBookingApp
     {
         public static string Hash(string source)
         {
-            string hash = BCrypt.Net.BCrypt.EnhancedHashPassword(source, 13);
-
-            return hash.ToString();
+            return BCrypt.Net.BCrypt.EnhancedHashPassword(source, 13);
         }
 
         public static bool Verify(string password, string hash)
