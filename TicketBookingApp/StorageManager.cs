@@ -5,6 +5,14 @@ namespace TicketBookingApp
 {
     public class StorageManager
     {
+        public enum SQLAction
+        {
+            Select = 0,
+            Insert = 1,
+            Delete = 2,
+            Update = 3
+        }
+
         private SqlConnection? connection;
 
         public StorageManager(string connectionString)
@@ -36,50 +44,56 @@ namespace TicketBookingApp
             }
         }
 
-        public List<City> CitiesSelect()
+        public List<City>? Cities(SQLAction SQLAction, City? cityOne = null, City? cityTwo = null)
         {
-            List<City> cities = new List<City>();
-            string sqlString = "SELECT * FROM ";
+            string sqlString;
 
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
+            switch (SQLAction)
             {
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
+                case SQLAction.Select:
+                    List<City> cities = new();
+                    sqlString = "SELECT * FROM ";
+
+                    using (SqlCommand cmd = new(sqlString, connection))
                     {
-                        int cityId = Convert.ToInt32(reader["cityId"]);
-                        string cityName = reader["cityName"].ToString();
-                        cities.Add(new City(cityId, cityName));
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int cityId = Convert.ToInt32(reader["cityId"]);
+                                string? cityName = reader["cityName"].ToString();
+                                cities.Add(new City(cityId, cityName ?? throw new Exception("Null City Name")));
+                            }
+                        }
                     }
-                }
-            }
-            return cities;
-        }
+                    return cities;
 
-        public void CitiesInsert(City city)
-        {
-            string sqlString = "INSERT INTO _ VALUES ";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
+                case SQLAction.Insert:
+                    sqlString = "INSERT INTO _ VALUES ";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
 
-            }
-        }
+                    }
+                    return null;
 
-        public void CitiesDelete(City city)
-        {
-            string sqlString = "DELETE FROM _ WHERE";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
+                case SQLAction.Delete:
+                    sqlString = "DELETE FROM _ WHERE";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
 
-            }
-        }
+                    }
+                    return null;
 
-        public void CitiesUpdate(City oldCity, City newCity)
-        {
-            string sqlString = "UPDATE _ SET ";
-            using (SqlCommand cmd = new SqlCommand(sqlString, connection))
-            {
+                case SQLAction.Update:
+                    sqlString = "UPDATE _ SET ";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
 
+                    }
+                    return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
             }
         }
     }
