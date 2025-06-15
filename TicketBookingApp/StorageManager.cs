@@ -45,6 +45,78 @@ namespace TicketBookingApp
             }
         }
 
+        public void Setup()
+        {
+            void LoadingText()
+            {
+                Console.CursorVisible = false;
+                try
+                {
+                    string[] dotSequence = ["   ", ".  ", ".. ", "..."];
+                    string message = "Loading Data";
+
+                    (int left, int top) = Console.GetCursorPosition();
+
+                    for (int i = 0; true; i++)
+                    {
+                        if (i >= 4) i = 0;
+
+                        Console.SetCursorPosition(left, top);
+
+                        Console.Write(message + dotSequence[i]);
+
+                        Thread.Sleep(250);
+                    }
+                }
+                catch (ThreadInterruptedException)
+                {
+                    Console.CursorVisible = true;
+                    Console.WriteLine();
+                }
+
+                Console.CursorVisible = true;
+                Console.WriteLine();
+            }
+
+            Thread loading = new(new ThreadStart(LoadingText));
+
+            loading.Start();
+
+            // AppDomain.CurrentDomain.BaseDirectory gives the path to the bin directory of the project.
+            string GetDirectory(string file) => Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "TicketBookingDatabase",
+                "TicketBookingDatabase",
+                file);
+
+            List<string> batches =
+            [
+                File.ReadAllText(GetDirectory("qryTableAdd.sql")),
+                File.ReadAllText(GetDirectory("qryLoadData.sql")),
+                File.ReadAllText(GetDirectory("qryLoadCustomerData.sql")),
+                File.ReadAllText(GetDirectory("qryLoadCustomerAddresses.sql")),
+                File.ReadAllText(GetDirectory("qryLoadSalesData.sql")),
+            ];
+
+            // Runs all SQL commands in the batches.
+            foreach (var batch in batches)
+            {
+                string[] sqlStrings = batch.Split("GO", StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (string sqlString in sqlStrings)
+                {
+                    SqlCommand cmd = new(sqlString, connection);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            loading.Interrupt();
+        }
+
         public List<City>? Cities(SQLAction SQLAction, City? cityOne = null, City? cityTwo = null)
         {
             string sqlString;
