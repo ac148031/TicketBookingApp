@@ -95,8 +95,8 @@ namespace TicketBookingApp
 
             List<string> batches =
             [
-                File.ReadAllText(GetDirectory("qryTableAdd.sql")),
-                File.ReadAllText(GetDirectory("qryLoadData.sql")),
+                .. File.ReadAllText(GetDirectory("qryTableAdd.sql")).Split("GO", StringSplitOptions.RemoveEmptyEntries),
+                .. File.ReadAllText(GetDirectory("qryLoadData.sql")).Split("GO", StringSplitOptions.RemoveEmptyEntries),
                 File.ReadAllText(GetDirectory("qryLoadCustomerData.sql")),
                 File.ReadAllText(GetDirectory("qryLoadCustomerAddresses.sql")),
                 File.ReadAllText(GetDirectory("qryLoadSalesData.sql")),
@@ -105,13 +105,8 @@ namespace TicketBookingApp
             // Runs all SQL commands in the batches.
             foreach (var batch in batches)
             {
-                string[] sqlStrings = batch.Split("GO", StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (string sqlString in sqlStrings)
-                {
-                    SqlCommand cmd = new(sqlString, connection);
-                    cmd.ExecuteNonQuery();
-                }
+                SqlCommand cmd = new(batch, connection);
+                cmd.ExecuteNonQuery();
             }
 
             loading.Interrupt();
@@ -133,9 +128,9 @@ namespace TicketBookingApp
                         {
                             while (reader.Read())
                             {
-                                int cityId = Convert.ToInt32(reader["cityId"]);
-                                string? cityName = reader["cityName"].ToString();
-                                cities.Add(new City(cityId, cityName ?? throw new Exception("Null City Name")));
+                                cities.Add(new City(
+                                    reader.GetInt32(reader.GetOrdinal("cityId")),
+                                    reader.GetString(reader.GetOrdinal("cityName"))));
                             }
                         }
                     }
@@ -170,7 +165,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Customer>? Customers(SQLAction SQLAction, Customer? customerOne = null, Customer? customerTwo = null)
+        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Customer? customerOne = null, Customer? customerTwo = null)
         {
             string sqlString;
 
@@ -178,7 +173,7 @@ namespace TicketBookingApp
             {
                 case SQLAction.Select:
                     List<Customer> customers = new();
-                    sqlString = "SELECT * FROM sales.customers";
+                    sqlString = "SELECT * FROM sales.tblCustomers " + whereClause;
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
@@ -186,23 +181,14 @@ namespace TicketBookingApp
                         {
                             while (reader.Read())
                             {
-                                int customerId = Convert.ToInt32(reader["customerId"]);
-                                string? customerFirstName = reader["customerFirstName"].ToString();
-                                string? customerLastName = reader["customerLastName"].ToString();
-                                string? customerPhone = reader["customerPhone"].ToString();
-                                string? customerEmail = reader["customerEmail"].ToString();
-                                string? customerUsername = reader["customerUsername"].ToString();
-                                string? customerPassword = reader["customerPassword"].ToString();
-
                                 customers.Add(new Customer(
-                                    customerId,
-                                    customerFirstName ?? throw new Exception("Null First Name"),
-                                    customerLastName ?? throw new Exception("Null Last Name"),
-                                    customerPhone ?? throw new Exception("Null Phone Number"),
-                                    customerEmail ?? throw new Exception("Null Email"),
-                                    customerUsername ?? throw new Exception("Null Username"),
-                                    customerPassword ?? throw new Exception("Null Password")
-                                    ));
+                                    reader.GetInt32(reader.GetOrdinal("customerId")),
+                                    reader.GetString(reader.GetOrdinal("customerFirstName")),
+                                    reader.GetString(reader.GetOrdinal("customerLastName")),
+                                    reader.GetString(reader.GetOrdinal("customerPhone")),
+                                    reader.GetString(reader.GetOrdinal("customerEmail")),
+                                    reader.GetString(reader.GetOrdinal("customerUsername")),
+                                    reader.GetString(reader.GetOrdinal("customerPassword"))));
                             }
                         }
                     }

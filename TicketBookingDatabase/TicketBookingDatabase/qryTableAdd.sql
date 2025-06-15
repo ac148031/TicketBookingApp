@@ -67,7 +67,9 @@ CREATE TABLE sales.tblCustomers (
     customerFirstName VARCHAR (50)  NOT NULL,
     customerLastName  VARCHAR (50)  NOT NULL,
     customerPhone     VARCHAR (15)  NOT NULL,
-    customerEmail     VARCHAR (255) NOT NULL
+    customerEmail     VARCHAR (255) NOT NULL,
+    customerUsername  VARCHAR (255) NOT NULL,
+    customerPassword  VARCHAR (255) NOT NULL
 );
 
 -- Has Data

@@ -1,4 +1,5 @@
-﻿using static TicketBookingApp.StorageManager;
+﻿using TicketBookingApp.Table_Classes;
+using static TicketBookingApp.StorageManager;
 
 namespace TicketBookingApp
 {
@@ -6,23 +7,53 @@ namespace TicketBookingApp
     {
         static void Main(string[] args)
         {
+            //Console.WriteLine(PWSecurity.Verify("123456789", "$2a$08$9HMyoipTzjOzIPOfOCzPae4h4IAdsvXY8YuHqhsSTuMpKIygQ8MPC"));
+
+            //return;
 
             string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True;" +
                 "Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
 
             var storageManager = new StorageManager(connectionString);
             var view = new ConsoleView();
+            //storageManager.Setup();
+            //return;
 
-            //(string username, string password) = view.LogInScreen(0);
-            //if (username == "0" && password == "0") return;
-
-            storageManager.Setup();
-
-            var h = storageManager.Cities(SQLAction.Select);
-            foreach (City city in h)
+            bool loggedIn = false;
+            int errorCode = 0;
+            string username = string.Empty;
+            do
             {
-                Console.WriteLine($"City: {city.CityName}, ID: {city.CityId}");
-            }
+                (username, string password) = view.LogInScreen(errorCode);
+                if (username == "0" && password == "0")
+                {
+                    Console.Clear();
+                    return;
+                }
+                else if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                {
+                    errorCode = 2;
+                    continue;
+                }
+                else
+                {
+                    List<Customer>? customers = storageManager.Customers(SQLAction.Select, $"WHERE customerUsername = '{username}'");
+                    if (customers.Any(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
+                    {
+                        errorCode = 0;
+                        loggedIn = true;
+                        Console.Clear();
+                        continue;
+                    }
+                    else
+                    {
+                        errorCode = 1;
+                        continue;
+                    }
+                }
+            } while (!loggedIn);
+
+
         }
 
     }

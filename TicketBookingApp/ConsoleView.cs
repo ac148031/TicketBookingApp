@@ -8,7 +8,7 @@ namespace TicketBookingApp
         private int WindowWidth = Console.WindowWidth;
         private int WindowHeight = Console.WindowHeight;
 
-        public (string username, string password) LogInScreen()
+        public (string username, string password) LogInScreen(int errorCode)
         {
             Console.Clear();
             DrawHeader();
@@ -31,6 +31,22 @@ namespace TicketBookingApp
                 Console.Write(inputFields[i]);
             }
 
+            Dictionary<int, string> errorMessages = new()
+            {
+                { 1, "Invalid Username or Password" },
+                { 2, "Username or Password cannot be empty" }
+            };
+
+            if (errorCode != 0)
+            {
+                int errorXPos = (int)Math.Round((WindowWidth / 2d) - (errorMessages[errorCode].Length / 2d));
+                Console.SetCursorPosition(errorXPos, startYPos + inputFields.Length + 1);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write(errorMessages[errorCode]);
+                Console.ResetColor();
+            }
+
+            // Get password and username
             StringBuilder username = new();
             StringBuilder password = new();
 
@@ -40,7 +56,6 @@ namespace TicketBookingApp
 
             ConsoleKeyInfo input;
 
-            // Get password and username
             while (true)
             {
                 if (inputPassword)
@@ -107,7 +122,6 @@ namespace TicketBookingApp
                         }
                     }
                 }
-
             }
         }
 
