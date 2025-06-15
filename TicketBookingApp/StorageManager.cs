@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
 {
@@ -52,7 +53,7 @@ namespace TicketBookingApp
             {
                 case SQLAction.Select:
                     List<City> cities = new();
-                    sqlString = "SELECT * FROM ";
+                    sqlString = "SELECT * FROM concerts.tblCities";
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
@@ -67,6 +68,73 @@ namespace TicketBookingApp
                         }
                     }
                     return cities;
+
+                case SQLAction.Insert:
+                    sqlString = "INSERT INTO _ VALUES ";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+
+                    }
+                    return null;
+
+                case SQLAction.Delete:
+                    sqlString = "DELETE FROM _ WHERE";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+
+                    }
+                    return null;
+
+                case SQLAction.Update:
+                    sqlString = "UPDATE _ SET ";
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+
+                    }
+                    return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
+        public List<Customer>? Customers(SQLAction SQLAction, Customer? customerOne = null, Customer? customerTwo = null)
+        {
+            string sqlString;
+
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<Customer> customers = new();
+                    sqlString = "SELECT * FROM sales.customers";
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int customerId = Convert.ToInt32(reader["customerId"]);
+                                string? customerFirstName = reader["customerFirstName"].ToString();
+                                string? customerLastName = reader["customerLastName"].ToString();
+                                string? customerPhone = reader["customerPhone"].ToString();
+                                string? customerEmail = reader["customerEmail"].ToString();
+                                string? customerUsername = reader["customerUsername"].ToString();
+                                string? customerPassword = reader["customerPassword"].ToString();
+
+                                customers.Add(new Customer(
+                                    customerId,
+                                    customerFirstName ?? throw new Exception("Null First Name"),
+                                    customerLastName ?? throw new Exception("Null Last Name"),
+                                    customerPhone ?? throw new Exception("Null Phone Number"),
+                                    customerEmail ?? throw new Exception("Null Email"),
+                                    customerUsername ?? throw new Exception("Null Username"),
+                                    customerPassword ?? throw new Exception("Null Password")
+                                    ));
+                            }
+                        }
+                    }
+                    return customers;
 
                 case SQLAction.Insert:
                     sqlString = "INSERT INTO _ VALUES ";
