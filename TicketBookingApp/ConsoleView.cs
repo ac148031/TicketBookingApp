@@ -8,11 +8,12 @@ namespace TicketBookingApp
         private int WindowWidth = Console.WindowWidth;
         private int WindowHeight = Console.WindowHeight;
 
-        public (string username, string password) LogInScreen(int errorCode)
+        public (string username, string password) Login(int errorCode)
         {
             Console.Clear();
+            Console.CursorVisible = false;
             DrawHeader();
-            DrawFooter();
+            DrawFooter(["Register - Ctrl + R"]);
 
             //Draw login boxes 
             string[] inputFields = [
@@ -55,6 +56,7 @@ namespace TicketBookingApp
             int xOffset = 0;
 
             ConsoleKeyInfo input;
+            Console.CursorVisible = true;
 
             while (true)
             {
@@ -87,8 +89,8 @@ namespace TicketBookingApp
                 else if (input.Key == ConsoleKey.Enter) return (username.ToString(), password.ToString());
                 // Tab switches boxes
                 else if (input.Key == ConsoleKey.Tab) inputPassword = !inputPassword;
-                // Ctrl + E exits with codes 0
-                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) return ("0", "0");
+                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) System.Environment.Exit(0);
+                else if (input.Key == ConsoleKey.R && (input.Modifiers & ConsoleModifiers.Control) != 0) return (" ", " ");
                 else if (input.Key == ConsoleKey.Backspace)
                 {
                     if (inputPassword)
@@ -125,25 +127,116 @@ namespace TicketBookingApp
             }
         }
 
-        private void DrawHeader()
+        public int Menu(Dictionary<string, int> menuOptions)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Main Menu");
+            DrawFooter();
+
+            string[] menuOptionKeys = menuOptions.Keys.ToArray();
+
+            //string[] menuOptionKeys = ["View My Profile", "View My Bookings", "option 2", "option 3"];
+            int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
+            longestOption = longestOption < 23 ? 23 : longestOption;
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - ((longestOption + 4) / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (menuOptionKeys.Length + 1));
+
+            for (int i = 0; i < (2 * menuOptionKeys.Length) + 1; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                if (i % 2 == 0)
+                {
+                    if (i == 0)
+                    {
+                        Console.Write("┌" + new string('─', longestOption + 2) + "┐");
+                    }
+                    else if (i == menuOptionKeys.Length * 2)
+                    {
+                        Console.Write("└" + new string('─', longestOption + 2) + "┘");
+                    }
+                    else
+                    {
+                        Console.Write("├" + new string('─', longestOption + 2) + "┤");
+                    }
+                }
+                else
+                {
+                    Console.Write("│" + new string(' ', longestOption + 2) + "│");
+                }
+            }
+
+            int selectedOption = 0;
+            ConsoleKeyInfo input;
+
+            while (true)
+            {
+                for (int i = 0; i < menuOptionKeys.Length; i++)
+                {
+                    int xPos = (int)Math.Round((WindowWidth / 2d) - (menuOptionKeys[i].Length / 2d));
+                    Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
+                    if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                    else Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(menuOptionKeys[i]);
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+                input = Console.ReadKey(true);
+
+                if (input.Key == ConsoleKey.UpArrow && selectedOption > 0) selectedOption--;
+                else if (input.Key == ConsoleKey.DownArrow && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0)
+                {
+                    Console.CursorVisible = true;
+                    System.Environment.Exit(0);
+                }
+                else if (input.Key == ConsoleKey.Tab)
+                {
+                    if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
+                    else selectedOption++;
+                }
+                else if (input.Key == ConsoleKey.Enter)
+                {
+                    Console.CursorVisible = true;
+                    return menuOptions[menuOptionKeys[selectedOption]];
+                }
+            }
+        }
+
+
+        private void DrawHeader(string? screen = null)
         {
             string line = new string('─', WindowWidth);
             Console.SetCursorPosition(0, 1);
             Console.Write(line);
 
             string header = "Ticket Sales Application";
+            if (screen != null)
+            {
+                header += " - " + screen;
+            }
+
             int horizontalPos = (int)Math.Round((WindowWidth / 2d) - (header.Length / 2d));
             Console.SetCursorPosition(horizontalPos, 0);
             Console.Write(header);
         }
 
-        private void DrawFooter()
+        private void DrawFooter(string[]? footerAdd = null)
         {
             string line = new string('─', WindowWidth);
             Console.SetCursorPosition(0, WindowHeight - 2);
             Console.Write(line);
 
             string footer = "Exit - Ctrl + E";
+            if (footerAdd != null)
+            {
+                foreach (string add in footerAdd)
+                {
+                    footer += " " + add;
+                }
+            }
+
             int horizontalPos = (int)Math.Round((WindowWidth / 2d) - (footer.Length / 2d));
             Console.SetCursorPosition(horizontalPos, WindowHeight - 1);
             Console.Write(footer);

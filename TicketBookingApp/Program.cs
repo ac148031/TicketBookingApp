@@ -5,12 +5,10 @@ namespace TicketBookingApp
 {
     public class Program
     {
+        private static string Username = string.Empty;
+
         static void Main(string[] args)
         {
-            //Console.WriteLine(PWSecurity.Verify("123456789", "$2a$08$9HMyoipTzjOzIPOfOCzPae4h4IAdsvXY8YuHqhsSTuMpKIygQ8MPC"));
-
-            //return;
-
             string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True;" +
                 "Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
 
@@ -18,19 +16,43 @@ namespace TicketBookingApp
             var view = new ConsoleView();
             //storageManager.Setup();
             //return;
+            bool loggedIn = false;
 
+            while (true)
+            {
+                if (!loggedIn)
+                {
+                    Username = LoginScreen(view, storageManager);
+                    loggedIn = true;
+                }
+
+                Dictionary<string, int> menuOptions = new()
+                {
+                    { "View My Profile", 1 },
+                    { "View My Bookings", 2 },
+                    { "Log Out", 3 }
+                };
+
+                int exitCode = view.Menu(menuOptions);
+
+                if (exitCode == 3)
+                {
+                    Username = String.Empty;
+                    loggedIn = false;
+                    continue;
+                }
+            }
+        }
+
+        private static string LoginScreen(ConsoleView view, StorageManager storageManager)
+        {
             bool loggedIn = false;
             int errorCode = 0;
             string username = string.Empty;
             do
             {
-                (username, string password) = view.LogInScreen(errorCode);
-                if (username == "0" && password == "0")
-                {
-                    Console.Clear();
-                    return;
-                }
-                else if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                (username, string password) = view.Login(errorCode);
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
                 {
                     errorCode = 2;
                     continue;
@@ -52,9 +74,7 @@ namespace TicketBookingApp
                     }
                 }
             } while (!loggedIn);
-
-
+            return username;
         }
-
     }
 }
