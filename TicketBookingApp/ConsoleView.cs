@@ -195,37 +195,16 @@ namespace TicketBookingApp
                 {
                     yOffset = 0;
                     currentEdit = username;
-                    if (username.Length < 19) xOffset = username.Length;
-                    else
-                    {
-                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
-                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
-                        Console.Write(username.ToString().Substring(username.Length - 19, 19) + " ");
-                    }
                 }
                 else if (inputBoxSelection == 1)
                 {
                     yOffset = 2;
                     currentEdit = password;
-                    if (password.Length < 19) xOffset = password.Length;
-                    else
-                    {
-                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
-                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
-                        Console.Write(password.ToString().Substring(password.Length - 19, 19) + " ");
-                    }
                 }
                 else if (inputBoxSelection == 2)
                 {
                     yOffset = 4;
                     currentEdit = confirmPassword;
-                    if (confirmPassword.Length < 19) xOffset = confirmPassword.Length;
-                    else
-                    {
-                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
-                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
-                        Console.Write(confirmPassword.ToString().Substring(confirmPassword.Length - 19, 19) + " ");
-                    }
                 }
                 else
                 {
