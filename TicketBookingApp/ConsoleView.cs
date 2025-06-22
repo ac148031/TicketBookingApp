@@ -8,7 +8,7 @@ namespace TicketBookingApp
         private int WindowWidth = Console.WindowWidth;
         private int WindowHeight = Console.WindowHeight;
 
-        public (string username, string password) Login(int errorCode)
+        public (string, string) Login(int errorCode)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -24,7 +24,7 @@ namespace TicketBookingApp
             "         └────────────────────┘"];
 
             int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
-            int startYPos = (int)Math.Round((WindowHeight / 2d) - (5 / 2d)); // Positions for center of console
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d)); // Positions for center of console
 
             for (int i = 0; i < inputFields.Length; i++)
             {
@@ -126,6 +126,184 @@ namespace TicketBookingApp
                 }
             }
         }
+        public (string, string, string) Register(int errorCode)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Register");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            string[] inputFields = [
+            "                 ┌────────────────────┐",
+            "        Username │                    │",
+            "                 ├────────────────────┤",
+            "        Password │                    │",
+            "                 ├────────────────────┤",
+            "Confirm Password │                    │",
+            "                 └────────────────────┘"];
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d));
+
+            for (int i = 0; i < inputFields.Length; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(inputFields[i]);
+            }
+
+            Dictionary<int, string> errorMessages = new()
+            {
+                { 1, "Username or Password cannot be empty" },
+                { 2, "Passwords do not match" },
+                { 3, "Username is unavailable" },
+                { 4, "Password must:\nBe between 8-20 characters\nContain a number\nContain a special character\nContain a lower case letter\nContain an upper case letter"},
+                { 5, "Username must:\nBe between 4-20 characters" }
+            };
+
+            if (errorCode != 0)
+            {
+                string[] errorMessage = errorMessages[errorCode].Split('\n');
+                int longestLine = errorMessage.Max(line => line.Length);
+                int errorXPos = (int)Math.Round((WindowWidth / 2d) - (longestLine / 2d));
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                for (int i = 0; i < errorMessage.Length; i++)
+                {
+                    Console.SetCursorPosition(errorXPos, startYPos + inputFields.Length + 1 + i);
+                    Console.Write(errorMessage[i]);
+                }
+                Console.ResetColor();
+
+            }
+
+            StringBuilder username = new();
+            StringBuilder password = new();
+            StringBuilder confirmPassword = new();
+
+            int inputBoxSelection = 0;
+            int yOffset = 0;
+            int xOffset = 0;
+
+            ConsoleKeyInfo input;
+            Console.CursorVisible = true;
+
+            while (true)
+            {
+                StringBuilder currentEdit = new();
+
+                if (inputBoxSelection == 0)
+                {
+                    yOffset = 0;
+                    currentEdit = username;
+                    if (username.Length < 19) xOffset = username.Length;
+                    else
+                    {
+                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                        Console.Write(username.ToString().Substring(username.Length - 19, 19) + " ");
+                    }
+                }
+                else if (inputBoxSelection == 1)
+                {
+                    yOffset = 2;
+                    currentEdit = password;
+                    if (password.Length < 19) xOffset = password.Length;
+                    else
+                    {
+                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                        Console.Write(password.ToString().Substring(password.Length - 19, 19) + " ");
+                    }
+                }
+                else if (inputBoxSelection == 2)
+                {
+                    yOffset = 4;
+                    currentEdit = confirmPassword;
+                    if (confirmPassword.Length < 19) xOffset = confirmPassword.Length;
+                    else
+                    {
+                        xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                        Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                        Console.Write(confirmPassword.ToString().Substring(confirmPassword.Length - 19, 19) + " ");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Invalid box selection");
+                }
+
+                if (currentEdit.Length < 19) xOffset = currentEdit.Length;
+                else
+                {
+                    xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                    Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                    Console.Write(currentEdit.ToString().Substring(currentEdit.Length - 19, 19) + " ");
+                }
+
+                Console.SetCursorPosition(startXPos + xOffset + 18, startYPos + yOffset + 1);
+                input = Console.ReadKey();
+
+                if (inputBoxSelection != 2 && input.Key == ConsoleKey.Enter) inputBoxSelection++;
+                else if (input.Key == ConsoleKey.Enter) return (username.ToString(), password.ToString(), confirmPassword.ToString());
+                else if (inputBoxSelection != 2 && input.Key == ConsoleKey.Tab) inputBoxSelection++;
+                else if (input.Key == ConsoleKey.Tab) inputBoxSelection = 0;
+                else if (input.Key == ConsoleKey.UpArrow && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.Key == ConsoleKey.DownArrow && inputBoxSelection < 2) inputBoxSelection++;
+                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) System.Environment.Exit(0);
+                else if (input.Key == ConsoleKey.B && (input.Modifiers & ConsoleModifiers.Control) != 0) return (" ", " ", " ");
+                else if (input.Key == ConsoleKey.Backspace)
+                {
+                    if (inputBoxSelection == 0)
+                    {
+                        if (username.Length > 0) username.Length--;
+                        if (username.Length < 19)
+                        {
+                            Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                            Console.Write(username.ToString().Substring(0, username.Length) + " ");
+                        }
+                    }
+                    else if (inputBoxSelection == 1)
+                    {
+                        if (password.Length > 0) password.Length--;
+                        if (password.Length < 19)
+                        {
+                            Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                            Console.Write(password.ToString().Substring(0, password.Length) + " ");
+                        }
+                    }
+                    else if (inputBoxSelection == 2)
+                    {
+                        if (confirmPassword.Length > 0) confirmPassword.Length--;
+                        if (confirmPassword.Length < 19)
+                        {
+                            Console.SetCursorPosition(startXPos + 18, startYPos + yOffset + 1);
+                            Console.Write(confirmPassword.ToString().Substring(0, confirmPassword.Length) + " ");
+                        }
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    // Only accepts char if is a-Z, a symbol or punctuation, but not space.
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c))
+                    {
+                        if (inputBoxSelection == 0)
+                        {
+                            username.Append(c);
+                        }
+                        else if (inputBoxSelection == 1)
+                        {
+                            password.Append(c);
+                        }
+                        else if (inputBoxSelection == 2)
+                        {
+                            confirmPassword.Append(c);
+                        }
+                    }
+                }
+            }
+        }
 
         public int Menu(Dictionary<string, int> menuOptions)
         {
@@ -204,7 +382,6 @@ namespace TicketBookingApp
             }
         }
 
-
         private void DrawHeader(string? screen = null)
         {
             string line = new string('─', WindowWidth);
@@ -233,7 +410,7 @@ namespace TicketBookingApp
             {
                 foreach (string add in footerAdd)
                 {
-                    footer += " " + add;
+                    footer += " | " + add;
                 }
             }
 
