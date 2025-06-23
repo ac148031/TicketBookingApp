@@ -135,7 +135,6 @@ namespace TicketBookingApp
                     if (!brokenPassword.Any(char.IsLower)) appropriatePassword = false;
                     if (!brokenPassword.Any(char.IsUpper)) appropriatePassword = false;
 
-
                     if (!appropriateUsername)
                     {
                         errorCode = 5;
@@ -146,8 +145,90 @@ namespace TicketBookingApp
                         errorCode = 4;
                         continue;
                     }
+
+                    Customer customerLoginDetails = new(-1, null, null, null, null, username, password);
+                    EditProfileScreen(view, storageManager, customerLoginDetails);
+                    registered = true;
                 }
             } while (!registered);
+        }
+
+        private static void EditProfileScreen(ConsoleView view, StorageManager storageManager, Customer existing)
+        {
+            bool edited = false;
+            int errorCode = 0;
+            Customer newCustomer;
+
+            do
+            {
+                newCustomer = view.UserDetails(errorCode);
+
+                if (newCustomer == null) return;
+
+                // User input handling logic
+                int emptyValues = 0;
+                int emptyProperty = -1;
+                if (string.IsNullOrEmpty(newCustomer.CustomerFirstName))
+                {
+                    emptyProperty = 0;
+                    emptyValues++;
+                }
+                if (string.IsNullOrEmpty(newCustomer.CustomerLastName))
+                {
+                    emptyProperty = 1;
+                    emptyValues++;
+                }
+                if (string.IsNullOrEmpty(newCustomer.CustomerPhone))
+                {
+                    emptyProperty = 2;
+                    emptyValues++;
+                }
+                if (string.IsNullOrEmpty(newCustomer.CustomerEmail))
+                {
+                    emptyProperty = 3;
+                    emptyValues++;
+                }
+
+                if (emptyValues > 1)
+                {
+                    errorCode = 1;
+                    continue;
+                }
+                else if (emptyValues == 1)
+                {
+                    errorCode = 2 + emptyProperty;
+                    continue;
+                }
+                else
+                {
+                    edited = true;
+                }
+
+                string message = existing.CustomerId == -1 ? "Registering User" : "Updating User Information";
+
+                Console.Clear();
+                Thread loading = new(() => ConsoleView.LoadingText(message));
+
+                loading.Start();
+
+                // Insert or update logic
+                if (existing.CustomerId == -1)
+                {
+                    newCustomer.CustomerPassword = PWSecurity.Hash(existing.CustomerPassword);
+                    newCustomer.CustomerUsername = existing.CustomerUsername;
+
+                    storageManager.Customers(SQLAction.Insert, insertCustomer: newCustomer);
+                }
+                else
+                {
+                    storageManager.Customers(SQLAction.Update, $"WHERE customerId = {existing.CustomerId}", insertCustomer: newCustomer);
+                }
+
+                Thread.Sleep(500);
+
+                loading.Interrupt();
+
+            } while (!edited);
         }
     }
 }

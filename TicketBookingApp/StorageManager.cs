@@ -14,7 +14,7 @@ namespace TicketBookingApp
             Update = 3
         }
 
-        private SqlConnection? connection;
+        private readonly SqlConnection? connection;
 
         public StorageManager(string connectionString)
         {
@@ -47,38 +47,7 @@ namespace TicketBookingApp
 
         public void Setup()
         {
-            void LoadingText()
-            {
-                Console.CursorVisible = false;
-                try
-                {
-                    string[] dotSequence = ["   ", ".  ", ".. ", "..."];
-                    string message = "Loading Data";
-
-                    (int left, int top) = Console.GetCursorPosition();
-
-                    for (int i = 0; true; i++)
-                    {
-                        if (i >= 4) i = 0;
-
-                        Console.SetCursorPosition(left, top);
-
-                        Console.Write(message + dotSequence[i]);
-
-                        Thread.Sleep(250);
-                    }
-                }
-                catch (ThreadInterruptedException)
-                {
-                    Console.CursorVisible = true;
-                    Console.WriteLine();
-                }
-
-                Console.CursorVisible = true;
-                Console.WriteLine();
-            }
-
-            Thread loading = new(new ThreadStart(LoadingText));
+            Thread loading = new(() => ConsoleView.LoadingText("Loading Data"));
 
             loading.Start();
 
@@ -112,6 +81,25 @@ namespace TicketBookingApp
             loading.Interrupt();
         }
 
+        private static void AddInsertProperties(string? property, string propertyName, ref string values, ref string columns, ref bool notNull)
+        {
+            if (!string.IsNullOrEmpty(property))
+            {
+                values += values[^1] == '(' ? $"'{property}'" : $", '{property}'";
+                columns += columns[^1] == '(' ? $"{propertyName}" : $", {propertyName}";
+                notNull = true;
+            }
+        }
+
+        private static void AddUpdateProperties(string? property, string propertyName, ref string setClause, ref bool notNull)
+        {
+            if (!string.IsNullOrEmpty(property))
+            {
+                setClause += setClause.Length == 0 ? $"{propertyName} = '{property}'" : $", {propertyName} = '{property}'";
+                notNull = true;
+            }
+        }
+
         public List<City>? Cities(SQLAction SQLAction, City? cityOne = null, City? cityTwo = null)
         {
             string sqlString;
@@ -119,19 +107,17 @@ namespace TicketBookingApp
             switch (SQLAction)
             {
                 case SQLAction.Select:
-                    List<City> cities = new();
+                    List<City> cities = [];
                     sqlString = "SELECT * FROM concerts.tblCities";
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using SqlDataReader reader = cmd.ExecuteReader();
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                cities.Add(new City(
-                                    reader.GetInt32(reader.GetOrdinal("cityId")),
-                                    reader.GetString(reader.GetOrdinal("cityName"))));
-                            }
+                            cities.Add(new City(
+                                reader.GetInt32(reader.GetOrdinal("cityId")),
+                                reader.GetString(reader.GetOrdinal("cityName"))));
                         }
                     }
                     return cities;
@@ -165,7 +151,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Customer? customerOne = null, Customer? customerTwo = null)
+        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Customer? insertCustomer = null)
         {
             string sqlString;
 
@@ -195,10 +181,30 @@ namespace TicketBookingApp
                     return customers;
 
                 case SQLAction.Insert:
-                    sqlString = "INSERT INTO _ VALUES ";
+                    sqlString = "INSERT INTO sales.tblCustomers ";
+                    string values = "VALUES (";
+                    string columns = "(";
+                    bool notNull = false;
+
+                    AddInsertProperties(insertCustomer?.CustomerFirstName, "customerFirstName", ref values, ref columns, ref notNull);
+                    AddInsertProperties(insertCustomer?.CustomerLastName, "customerLastName", ref values, ref columns, ref notNull);
+                    AddInsertProperties(insertCustomer?.CustomerPhone, "customerPhone", ref values, ref columns, ref notNull);
+                    AddInsertProperties(insertCustomer?.CustomerEmail, "customerEmail", ref values, ref columns, ref notNull);
+                    AddInsertProperties(insertCustomer?.CustomerUsername, "customerUsername", ref values, ref columns, ref notNull);
+                    AddInsertProperties(insertCustomer?.CustomerPassword, "customerPassword", ref values, ref columns, ref notNull);
+
+                    if (!notNull)
+                    {
+                        throw new Exception("At least one field must be provided for insertion.");
+                    }
+
+                    sqlString += columns + ") " + values + ");";
+
+                    //Console.WriteLine(sqlString);
+
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
-
+                        cmd.ExecuteNonQuery();
                     }
                     return null;
 
@@ -211,11 +217,30 @@ namespace TicketBookingApp
                     return null;
 
                 case SQLAction.Update:
-                    sqlString = "UPDATE _ SET ";
-                    using (SqlCommand cmd = new(sqlString, connection))
-                    {
+                    sqlString = "UPDATE sales.tblCustomers ";
+                    string setClause = "SET ";
+                    notNull = false;
 
+                    AddUpdateProperties(insertCustomer?.CustomerFirstName, "customerFirstName", ref setClause, ref notNull);
+                    AddUpdateProperties(insertCustomer?.CustomerLastName, "customerLastName", ref setClause, ref notNull);
+                    AddUpdateProperties(insertCustomer?.CustomerPhone, "customerPhone", ref setClause, ref notNull);
+                    AddUpdateProperties(insertCustomer?.CustomerEmail, "customerEmail", ref setClause, ref notNull);
+                    AddUpdateProperties(insertCustomer?.CustomerUsername, "customerUsername", ref setClause, ref notNull);
+                    AddUpdateProperties(insertCustomer?.CustomerPassword, "customerPassword", ref setClause, ref notNull);
+
+                    if (!notNull)
+                    {
+                        throw new Exception("At least one field must be provided for insertion.");
                     }
+
+                    sqlString += setClause + " " + whereClause + ";";
+
+                    Console.WriteLine(sqlString);
+
+                    //using (SqlCommand cmd = new(sqlString, connection))
+                    //{
+                    //    cmd.ExecuteNonQuery();
+                    //}
                     return null;
 
                 default:
