@@ -42,6 +42,10 @@ namespace TicketBookingApp
                     loggedIn = false;
                     continue;
                 }
+                else if (exitCode == 1)
+                {
+
+                }
             }
         }
 
@@ -65,19 +69,27 @@ namespace TicketBookingApp
                 }
                 else
                 {
-                    List<Customer>? customers = storageManager.Customers(SQLAction.Select, $"WHERE customerUsername = '{username}'");
+                    Thread loading = new(() => ConsoleView.LoadingText("Checking Credentials"));
+                    Console.Clear();
+                    loading.Start();
+                    List<Customer>? customers = storageManager.Customers(SQLAction.Select,
+                                                                         $"WHERE customerUsername = '@Username'",
+                                                                         new() { { "@Username", username } });
                     if (customers.Any(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
                     {
                         errorCode = 0;
                         loggedIn = true;
                         Console.Clear();
+                        loading.Interrupt();
                         continue;
                     }
                     else
                     {
                         errorCode = 1;
+                        loading.Interrupt();
                         continue;
                     }
+
                 }
             } while (!loggedIn);
             return username;
@@ -108,7 +120,9 @@ namespace TicketBookingApp
                 }
                 else
                 {
-                    List<Customer>? customers = storageManager.Customers(SQLAction.Select, $"WHERE customerUsername = '{username}'");
+                    List<Customer>? customers = storageManager.Customers(SQLAction.Select,
+                                                                         $"WHERE customerUsername = '@Username'",
+                                                                         new() { { "@Username", username } });
                     if (customers?.Count != 0)
                     {
                         errorCode = 3;

@@ -151,7 +151,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Customer? insertCustomer = null)
+        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Customer? insertCustomer = null)
         {
             string sqlString;
 
@@ -163,19 +163,26 @@ namespace TicketBookingApp
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        if (parameters != null)
                         {
-                            while (reader.Read())
+                            foreach (var kvp in parameters)
                             {
-                                customers.Add(new Customer(
-                                    reader.GetInt32(reader.GetOrdinal("customerId")),
-                                    reader.GetString(reader.GetOrdinal("customerFirstName")),
-                                    reader.GetString(reader.GetOrdinal("customerLastName")),
-                                    reader.GetString(reader.GetOrdinal("customerPhone")),
-                                    reader.GetString(reader.GetOrdinal("customerEmail")),
-                                    reader.GetString(reader.GetOrdinal("customerUsername")),
-                                    reader.GetString(reader.GetOrdinal("customerPassword"))));
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
                             }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            customers.Add(new Customer(
+                                reader.GetInt32(reader.GetOrdinal("customerId")),
+                                reader.GetString(reader.GetOrdinal("customerFirstName")),
+                                reader.GetString(reader.GetOrdinal("customerLastName")),
+                                reader.GetString(reader.GetOrdinal("customerPhone")),
+                                reader.GetString(reader.GetOrdinal("customerEmail")),
+                                reader.GetString(reader.GetOrdinal("customerUsername")),
+                                reader.GetString(reader.GetOrdinal("customerPassword"))));
                         }
                     }
                     return customers;
