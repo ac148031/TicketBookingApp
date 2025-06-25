@@ -65,28 +65,23 @@ namespace TicketBookingApp
                 else if (username == " " && password == " ")
                 {
                     RegisterScreen(view, storageManager);
+                    errorCode = 0;
                     continue;
                 }
                 else
                 {
-                    Thread loading = new(() => ConsoleView.LoadingText("Checking Credentials"));
-                    Console.Clear();
-                    loading.Start();
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
-                                                                         $"WHERE customerUsername = '@Username'",
+                                                                         $"WHERE customerUsername = @Username",
                                                                          new() { { "@Username", username } });
                     if (customers.Any(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
                     {
                         errorCode = 0;
                         loggedIn = true;
-                        Console.Clear();
-                        loading.Interrupt();
                         continue;
                     }
                     else
                     {
                         errorCode = 1;
-                        loading.Interrupt();
                         continue;
                     }
 
@@ -121,7 +116,7 @@ namespace TicketBookingApp
                 else
                 {
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
-                                                                         $"WHERE customerUsername = '@Username'",
+                                                                         $"WHERE customerUsername = @Username",
                                                                          new() { { "@Username", username } });
                     if (customers?.Count != 0)
                     {

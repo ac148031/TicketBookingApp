@@ -159,7 +159,7 @@ namespace TicketBookingApp
             {
                 case SQLAction.Select:
                     List<Customer> customers = new();
-                    sqlString = "SELECT * FROM sales.tblCustomers " + whereClause;
+                    sqlString = "SELECT * FROM sales.tblCustomers " + whereClause + ";";
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
@@ -216,10 +216,19 @@ namespace TicketBookingApp
                     return null;
 
                 case SQLAction.Delete:
-                    sqlString = "DELETE FROM _ WHERE";
+                    sqlString = "DELETE FROM sales.tblCustomers " + whereClause + ";";
+
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
 
+                        cmd.ExecuteNonQuery();
                     }
                     return null;
 
