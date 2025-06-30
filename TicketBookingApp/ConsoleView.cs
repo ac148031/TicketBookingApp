@@ -90,13 +90,13 @@ namespace TicketBookingApp
                 input = Console.ReadKey(inputPassword);
 
                 // Enter switches to next box, or submits log in
-                if (!inputPassword && input.Key == ConsoleKey.Enter) inputPassword = true;
-                else if (input.Key == ConsoleKey.Enter) return (username.ToString(), password.ToString());
+                if (!inputPassword && input.MatchesInput("Enter")) inputPassword = true;
+                else if (input.MatchesInput("Enter")) return (username.ToString(), password.ToString());
                 // Tab switches boxes
-                else if (input.Key == ConsoleKey.Tab) inputPassword = !inputPassword;
-                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) Exit();
-                else if (input.Key == ConsoleKey.R && (input.Modifiers & ConsoleModifiers.Control) != 0) return (" ", " ");
-                else if (input.Key == ConsoleKey.Backspace)
+                else if (input.MatchesInput("Tab")) inputPassword = !inputPassword;
+                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["R", "Control"])) return (" ", " ");
+                else if (input.MatchesInput("Backspace"))
                 {
                     if (inputPassword)
                     {
@@ -131,6 +131,7 @@ namespace TicketBookingApp
                 }
             }
         }
+
         public (string, string, string) Register(int errorCode)
         {
             Console.Clear();
@@ -214,15 +215,15 @@ namespace TicketBookingApp
                 Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
                 input = Console.ReadKey();
 
-                if (inputBoxSelection != 2 && input.Key == ConsoleKey.Enter) inputBoxSelection++;
-                else if (input.Key == ConsoleKey.Enter) return (username.ToString(), password.ToString(), confirmPassword.ToString());
-                else if (inputBoxSelection != 2 && input.Key == ConsoleKey.Tab) inputBoxSelection++;
-                else if (input.Key == ConsoleKey.Tab) inputBoxSelection = 0;
-                else if (input.Key == ConsoleKey.UpArrow && inputBoxSelection > 0) inputBoxSelection--;
-                else if (input.Key == ConsoleKey.DownArrow && inputBoxSelection < 2) inputBoxSelection++;
-                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) Exit();
-                else if (input.Key == ConsoleKey.B && (input.Modifiers & ConsoleModifiers.Control) != 0) return (" ", " ", " ");
-                else if (input.Key == ConsoleKey.Backspace)
+                if (inputBoxSelection != 2 && input.MatchesInput("Enter")) inputBoxSelection++;
+                else if (input.MatchesInput("Enter")) return (username.ToString(), password.ToString(), confirmPassword.ToString());
+                else if (inputBoxSelection != 2 && input.MatchesInput("Tab")) inputBoxSelection++;
+                else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
+                else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.MatchesInput("DownArrow") && inputBoxSelection < 2) inputBoxSelection++;
+                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["B", "Control"])) return (" ", " ", " ");
+                else if (input.MatchesInput("Backspace"))
                 {
                     if (inputFieldsDict[inputBoxSelection].Length > 0)
                     {
@@ -246,6 +247,7 @@ namespace TicketBookingApp
                 }
             }
         }
+
         public Customer UserDetails(int errorCode)
         {
             Console.Clear();
@@ -333,14 +335,14 @@ namespace TicketBookingApp
                 Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
                 input = Console.ReadKey();
 
-                if (inputBoxSelection < 3 && (input.Key == ConsoleKey.Enter || input.Key == ConsoleKey.Tab)) inputBoxSelection++;
-                else if (input.Key == ConsoleKey.Enter) return new(-1, firstName.ToString(), lastName.ToString(), phone.ToString(), email.ToString(), null, null);
-                else if (input.Key == ConsoleKey.Tab) inputBoxSelection = 0;
-                else if (input.Key == ConsoleKey.UpArrow && inputBoxSelection > 0) inputBoxSelection--;
-                else if (input.Key == ConsoleKey.DownArrow && inputBoxSelection < 3) inputBoxSelection++;
-                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0) Exit();
-                else if (input.Key == ConsoleKey.B && (input.Modifiers & ConsoleModifiers.Control) != 0) return null;
-                else if (input.Key == ConsoleKey.Backspace)
+                if (inputBoxSelection < 3 && (input.MatchesInput("Enter") || input.MatchesInput("Tab"))) inputBoxSelection++;
+                else if (input.MatchesInput("Enter")) return new(-1, firstName.ToString(), lastName.ToString(), phone.ToString(), email.ToString(), null, null);
+                else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
+                else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.MatchesInput("DownArrow") && inputBoxSelection < 3) inputBoxSelection++;
+                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput("B") && (input.Modifiers & ConsoleModifiers.Control) != 0) return null;
+                else if (input.MatchesInput("Backspace"))
                 {
                     if (inputFieldsDict[inputBoxSelection].Length > 0) inputFieldsDict[inputBoxSelection].Length--;
                     if (inputFieldsDict[inputBoxSelection].Length < 19)
@@ -371,7 +373,6 @@ namespace TicketBookingApp
 
             string[] menuOptionKeys = menuOptions.Keys.ToArray();
 
-            //string[] menuOptionKeys = ["View My Profile", "View My Bookings", "option 2", "option 3"];
             int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
             longestOption = longestOption < 23 ? 23 : longestOption;
 
@@ -419,24 +420,69 @@ namespace TicketBookingApp
 
                 input = Console.ReadKey(true);
 
-                if (input.Key == ConsoleKey.UpArrow && selectedOption > 0) selectedOption--;
-                else if (input.Key == ConsoleKey.DownArrow && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
-                else if (input.Key == ConsoleKey.E && (input.Modifiers & ConsoleModifiers.Control) != 0)
+                if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.MatchesInput(["E", "Control"]))
                 {
-                    Console.CursorVisible = true;
-                    System.Environment.Exit(0);
+                    Exit();
                 }
-                else if (input.Key == ConsoleKey.Tab)
+                else if (input.MatchesInput("Tab"))
                 {
                     if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
                     else selectedOption++;
                 }
-                else if (input.Key == ConsoleKey.Enter)
+                else if (input.MatchesInput("Enter"))
                 {
                     Console.CursorVisible = true;
                     return menuOptions[menuOptionKeys[selectedOption]];
                 }
             }
+        }
+
+        public int ViewUserDetails(Customer user)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader($"{user.CustomerUsername}'s Profile");
+            DrawFooter(["Edit Details - Ctrl + D", "Back - Ctrl + B"]);
+
+            string[] userDetails = [
+                $"First Name: {user.CustomerFirstName}",
+                $"Last Name: {user.CustomerLastName}",
+                $"Phone: {user.CustomerPhone}",
+                $"Email: {user.CustomerEmail}"
+            ];
+
+            int longestOption = userDetails.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (longestOption / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (userDetails.Length / 2d));
+
+
+            for (int i = 0; i < userDetails.Length; i++)
+            {
+                string detail = userDetails[i];
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(detail);
+            }
+
+            ConsoleKeyInfo input;
+
+            while (true)
+            {
+                input = Console.ReadKey(true);
+
+                if (input.MatchesInput(["E", "Control"]))
+                {
+                    Exit();
+                }
+                else if (input.MatchesInput(["B", "Control"]))
+                {
+                    return 0;
+                }
+            }
+
+            return 0;
         }
 
         private void DrawHeader(string? screen = null)
@@ -499,11 +545,31 @@ namespace TicketBookingApp
             catch (ThreadInterruptedException)
             {
                 Console.CursorVisible = true;
-                Console.WriteLine();
             }
 
             Console.CursorVisible = true;
-            Console.WriteLine();
+        }
+    }
+
+    public static class ConsoleKeyInfoExtensions
+    {
+        public static bool MatchesInput(this ConsoleKeyInfo input, string[] desiredComponents)
+        {
+            if (Enum.TryParse(desiredComponents[0], true, out ConsoleKey key) && input.Key == key)
+            {
+                if (desiredComponents.Length > 1 &&
+                    Enum.TryParse(desiredComponents[1], true, out ConsoleModifiers modifiers))
+                {
+                    return (input.Modifiers & modifiers) == modifiers;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public static bool MatchesInput(this ConsoleKeyInfo input, string desired)
+        {
+            return Enum.TryParse(desired, true, out ConsoleKey key) && input.Key == key;
         }
     }
 }

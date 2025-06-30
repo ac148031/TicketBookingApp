@@ -1,4 +1,5 @@
-﻿using TicketBookingApp.Table_Classes;
+﻿using System.Reflection.Metadata;
+using TicketBookingApp.Table_Classes;
 using static TicketBookingApp.StorageManager;
 
 namespace TicketBookingApp
@@ -44,7 +45,14 @@ namespace TicketBookingApp
                 }
                 else if (exitCode == 1)
                 {
+                    List<Customer>? users = storageManager.Customers(SQLAction.Select,
+                                                           $"WHERE customerUsername = @Username",
+                                                         new() { { "@Username", Username } });
 
+                    if (users != null && users.Count == 1)
+                        view.ViewUserDetails(users[0]);
+                    else
+                        throw new Exception("Should not be more than one user to a username");
                 }
             }
         }
@@ -53,16 +61,15 @@ namespace TicketBookingApp
         {
             bool loggedIn = false;
             int errorCode = 0;
-            string username = string.Empty;
             do
             {
-                (username, string password) = view.Login(errorCode);
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                (Username, string password) = view.Login(errorCode);
+                if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(password))
                 {
                     errorCode = 2;
                     continue;
                 }
-                else if (username == " " && password == " ")
+                else if (Username == " " && password == " ")
                 {
                     RegisterScreen(view, storageManager);
                     errorCode = 0;
@@ -72,7 +79,7 @@ namespace TicketBookingApp
                 {
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
                                                                          $"WHERE customerUsername = @Username",
-                                                                         new() { { "@Username", username } });
+                                                                         new() { { "@Username", Username } });
                     if (customers.Any(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
                     {
                         errorCode = 0;
@@ -87,7 +94,7 @@ namespace TicketBookingApp
 
                 }
             } while (!loggedIn);
-            return username;
+            return Username;
         }
 
         private static void RegisterScreen(ConsoleView view, StorageManager storageManager)
