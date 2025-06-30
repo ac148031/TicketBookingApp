@@ -207,8 +207,6 @@ namespace TicketBookingApp
 
                     sqlString += columns + ") " + values + ");";
 
-                    //Console.WriteLine(sqlString);
-
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
                         cmd.ExecuteNonQuery();
@@ -251,12 +249,10 @@ namespace TicketBookingApp
 
                     sqlString += setClause + " " + whereClause + ";";
 
-                    Console.WriteLine(sqlString);
-
-                    //using (SqlCommand cmd = new(sqlString, connection))
-                    //{
-                    //    cmd.ExecuteNonQuery();
-                    //}
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
                     return null;
 
                 default:
