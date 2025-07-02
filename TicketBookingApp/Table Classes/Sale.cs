@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TicketBookingApp.Table_Classes
 {
-    internal class Sale
+    public class Sale
     {
         public int SaleId { get; set; }
         public int CustomerId { get; set; }
