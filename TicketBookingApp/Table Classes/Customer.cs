@@ -27,4 +27,37 @@ namespace TicketBookingApp.Table_Classes
             CustomerPassword = customerPassword;
         }
     }
+
+    public class FullCustomer : Customer
+    {
+        public List<CustomerAddress> CustomerAddresses;
+
+        public FullCustomer(
+            int customerId,
+            string customerFirstName,
+            string customerLastName,
+            string customerPhone,
+            string customerEmail,
+            string customerUsername,
+            string customerPassword,
+            List<CustomerAddress>? customerAddresses = null)
+        : base(
+            customerId,
+            customerFirstName,
+            customerLastName,
+            customerPhone,
+            customerEmail,
+            customerUsername,
+            customerPassword)
+        {
+            CustomerId = customerId;
+            CustomerFirstName = customerFirstName;
+            CustomerLastName = customerLastName;
+            CustomerPhone = customerPhone;
+            CustomerEmail = customerEmail;
+            CustomerUsername = customerUsername;
+            CustomerPassword = customerPassword;
+            CustomerAddresses = customerAddresses ?? new();
+        }
+    }
 }

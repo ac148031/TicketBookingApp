@@ -4,16 +4,16 @@ using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
 {
+    public enum SQLAction
+    {
+        Select,
+        Insert,
+        Delete,
+        Update
+    }
+
     public class StorageManager
     {
-        public enum SQLAction
-        {
-            Select = 0,
-            Insert = 1,
-            Delete = 2,
-            Update = 3
-        }
-
         private readonly SqlConnection? connection;
 
         public StorageManager(string connectionString)
@@ -322,6 +322,53 @@ namespace TicketBookingApp
                         cmd.ExecuteNonQuery();
                     }
                     return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
+        public List<FullCustomer>? FullCustomers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        {
+            string sqlString;
+
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<FullCustomer> fullCustomers = new();
+                    sqlString = "SELECT * FROM sales.tblCustomers " + whereClause + ";";
+
+                    List<CustomerAddress> addresses = CustomerAddresses(SQLAction.Select) ?? new();
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            FullCustomer current = new FullCustomer(
+                                reader.GetInt32(reader.GetOrdinal("customerId")),
+                                reader.GetString(reader.GetOrdinal("customerFirstName")),
+                                reader.GetString(reader.GetOrdinal("customerLastName")),
+                                reader.GetString(reader.GetOrdinal("customerPhone")),
+                                reader.GetString(reader.GetOrdinal("customerEmail")),
+                                reader.GetString(reader.GetOrdinal("customerUsername")),
+                                reader.GetString(reader.GetOrdinal("customerPassword")));
+
+                            current.CustomerAddresses = addresses.Where(address => address.CustomerId == current.CustomerId).ToList();
+
+                            fullCustomers.Add(current);
+                        }
+                    }
+                    return fullCustomers;
 
                 default:
                     throw new Exception("Invalid SQLAction");
