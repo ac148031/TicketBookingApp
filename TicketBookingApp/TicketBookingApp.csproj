@@ -8,6 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TicketBookingDatabase\TicketBookingDatabase\bin\**" />
+    <Compile Remove="TicketBookingDatabase\TicketBookingDatabase\obj\**" />
+    <EmbeddedResource Remove="TicketBookingDatabase\TicketBookingDatabase\bin\**" />
+    <EmbeddedResource Remove="TicketBookingDatabase\TicketBookingDatabase\obj\**" />
+    <None Remove="TicketBookingDatabase\TicketBookingDatabase\bin\**" />
+    <None Remove="TicketBookingDatabase\TicketBookingDatabase\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="TicketBookingDatabase\TicketBookingDatabase\TicketBookingDatabase.dbmdl" />
+    <None Remove="TicketBookingDatabase\TicketBookingDatabase\TicketBookingDatabase.jfm" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
   </ItemGroup>
