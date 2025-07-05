@@ -57,7 +57,6 @@ namespace TicketBookingApp
                 "..",
                 "..",
                 "..",
-                "..",
                 "TicketBookingDatabase",
                 "TicketBookingDatabase",
                 file);
@@ -250,7 +249,8 @@ namespace TicketBookingApp
                                 reader.GetString(reader.GetOrdinal("customerPhone")),
                                 reader.GetString(reader.GetOrdinal("customerEmail")),
                                 reader.GetString(reader.GetOrdinal("customerUsername")),
-                                reader.GetString(reader.GetOrdinal("customerPassword"))));
+                                reader.GetString(reader.GetOrdinal("customerPassword")),
+                                reader.GetBoolean(reader.GetOrdinal("customerIsAdmin"))));
                         }
                     }
                     return customers;
@@ -267,6 +267,7 @@ namespace TicketBookingApp
                     AddInsertProperties(insertCustomer?.CustomerEmail, "customerEmail", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertCustomer?.CustomerUsername, "customerUsername", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertCustomer?.CustomerPassword, "customerPassword", ref values, ref columns, ref notNull);
+                    AddInsertProperties(Convert.ToInt32(insertCustomer?.CustomerIsAdmin).ToString(), "customerIsAdmin", ref values, ref columns, ref notNull);
 
                     if (!notNull)
                     {
@@ -309,6 +310,7 @@ namespace TicketBookingApp
                     AddUpdateProperties(insertCustomer?.CustomerEmail, "customerEmail", ref setClause, ref notNull);
                     AddUpdateProperties(insertCustomer?.CustomerUsername, "customerUsername", ref setClause, ref notNull);
                     AddUpdateProperties(insertCustomer?.CustomerPassword, "customerPassword", ref setClause, ref notNull);
+                    AddUpdateProperties(Convert.ToInt32(insertCustomer?.CustomerIsAdmin).ToString(), "customerIsAdmin", ref setClause, ref notNull);
 
                     if (!notNull)
                     {
@@ -361,7 +363,8 @@ namespace TicketBookingApp
                                 reader.GetString(reader.GetOrdinal("customerPhone")),
                                 reader.GetString(reader.GetOrdinal("customerEmail")),
                                 reader.GetString(reader.GetOrdinal("customerUsername")),
-                                reader.GetString(reader.GetOrdinal("customerPassword")));
+                                reader.GetString(reader.GetOrdinal("customerPassword")),
+                                reader.GetBoolean(reader.GetOrdinal("customerIsAdmin")));
 
                             current.CustomerAddresses = addresses.Where(address => address.CustomerId == current.CustomerId).ToList();
 

@@ -15,6 +15,19 @@ namespace TicketBookingApp.Table_Classes
         public string CustomerEmail { get; set; }
         public string CustomerUsername { get; set; }
         public string CustomerPassword { get; set; }
+        public bool CustomerIsAdmin { get; set; }
+
+        public Customer(int customerId, string customerFirstName, string customerLastName, string customerPhone, string customerEmail, string customerUsername, string customerPassword, bool customerIsAdmin)
+        {
+            CustomerId = customerId;
+            CustomerFirstName = customerFirstName;
+            CustomerLastName = customerLastName;
+            CustomerPhone = customerPhone;
+            CustomerEmail = customerEmail;
+            CustomerUsername = customerUsername;
+            CustomerPassword = customerPassword;
+            CustomerIsAdmin = customerIsAdmin;
+        }
 
         public Customer(int customerId, string customerFirstName, string customerLastName, string customerPhone, string customerEmail, string customerUsername, string customerPassword)
         {
@@ -25,6 +38,7 @@ namespace TicketBookingApp.Table_Classes
             CustomerEmail = customerEmail;
             CustomerUsername = customerUsername;
             CustomerPassword = customerPassword;
+            CustomerIsAdmin = false;
         }
     }
 
@@ -40,6 +54,7 @@ namespace TicketBookingApp.Table_Classes
             string customerEmail,
             string customerUsername,
             string customerPassword,
+            bool customerIsAdmin,
             List<FullCustomerAddress>? customerAddresses = null)
         : base(
             customerId,
@@ -48,7 +63,8 @@ namespace TicketBookingApp.Table_Classes
             customerPhone,
             customerEmail,
             customerUsername,
-            customerPassword)
+            customerPassword,
+            customerIsAdmin)
         {
             CustomerAddresses = customerAddresses ?? new();
         }

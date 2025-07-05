@@ -8,8 +8,16 @@ namespace TicketBookingApp
     public class Program
     {
         private static string Username = string.Empty;
+        private static Customer? currentUser = null;
         private static StorageManager storageManager;
         private static ConsoleView view;
+
+        public static void Exit()
+        {
+            Console.Clear();
+            storageManager.CloseConnection();
+            System.Environment.Exit(0);
+        }
 
         static void Main(string[] args)
         {
@@ -18,48 +26,68 @@ namespace TicketBookingApp
 
             storageManager = new StorageManager(connectionString);
             view = new ConsoleView();
-            //storageManager.Setup();
-            //return;
 
-            bool loggedIn = false;
+            //storageManager.Setup();
+            //Exit();
 
             while (true)
             {
-                if (!loggedIn)
+                if (currentUser == null)
                 {
                     Username = LoginScreen();
-                    loggedIn = true;
+
+                    List<Customer>? users = storageManager.Customers(SQLAction.Select,
+                                                               $"WHERE customerUsername = @Username",
+                                                             new() { { "@Username", Username } });
+
+                    if (users != null && users.Count == 1)
+                        currentUser = users[0];
+                    else
+                        throw new Exception("Should not be more than one user to a username");
                 }
 
-                Dictionary<string, int> menuOptions = new()
+                Dictionary<string, int> menuOptions;
+
+                if (currentUser.CustomerIsAdmin)
                 {
-                    { "View My Profile", 1 },
-                    { "Browse Concerts", 2 },
-                    { "Log Out", 3 }
-                };
+                    menuOptions = new()
+                    {
+                        { "View My Profile", 1 },
+                        { "Browse Concerts", 2 },
+                        { "View All Customers", 4 },
+                        { "Log Out", 3 }
+                    };
+                }
+                else
+                {
+                    menuOptions = new()
+                    {
+                        { "View My Profile", 1 },
+                        { "Browse Concerts", 2 },
+                        { "Log Out", 3 }
+                    };
+                }
 
                 int exitCode = view.Menu(menuOptions);
 
-                if (exitCode == 3)
+                switch (exitCode)
                 {
-                    Username = String.Empty;
-                    loggedIn = false;
-                    continue;
-                }
-                else if (exitCode == 2)
-                {
-                    BrowseConcertScreen();
-                }
-                else if (exitCode == 1)
-                {
-                    List<Customer>? users = storageManager.Customers(SQLAction.Select,
-                                                           $"WHERE customerUsername = @Username",
-                                                         new() { { "@Username", Username } });
+                    case 1:
+                        view.ViewUserDetails(storageManager, currentUser.CustomerId);
+                        break;
 
-                    if (users != null && users.Count == 1)
-                        view.ViewUserDetails(storageManager, users[0].CustomerId);
-                    else
-                        throw new Exception("Should not be more than one user to a username");
+                    case 2:
+
+                        break;
+
+                    case 3:
+                        Username = String.Empty;
+                        currentUser = null;
+                        continue;
+
+                    case 4:
+                        CustomerSearchScreen();
+                        break;
                 }
             }
         }
@@ -254,7 +282,7 @@ namespace TicketBookingApp
             } while (!edited);
         }
 
-        private static void BrowseConcertScreen()
+        private static void CustomerSearchScreen()
         {
             int userId = 0;
             string initSearch = "";

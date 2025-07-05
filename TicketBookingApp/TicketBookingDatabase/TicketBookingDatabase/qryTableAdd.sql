@@ -69,7 +69,8 @@ CREATE TABLE sales.tblCustomers (
     customerPhone     VARCHAR (15)  NOT NULL,
     customerEmail     VARCHAR (255) NOT NULL,
     customerUsername  VARCHAR (255) NOT NULL,
-    customerPassword  VARCHAR (255) NOT NULL
+    customerPassword  VARCHAR (255) NOT NULL,
+    customerIsAdmin   BIT           DEFAULT 0 NOT NULL
 );
 
 -- Has Data

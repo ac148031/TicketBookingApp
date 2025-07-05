@@ -8,12 +8,6 @@ namespace TicketBookingApp
         private readonly int WindowWidth = Console.WindowWidth;
         private readonly int WindowHeight = Console.WindowHeight;
 
-        public static void Exit()
-        {
-            Console.Clear();
-            System.Environment.Exit(0);
-        }
-
         public (string, string) Login(int errorCode)
         {
             Console.Clear();
@@ -94,7 +88,7 @@ namespace TicketBookingApp
                 else if (input.MatchesInput("Enter")) return (username.ToString(), password.ToString());
                 // Tab switches boxes
                 else if (input.MatchesInput("Tab")) inputPassword = !inputPassword;
-                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
                 else if (input.MatchesInput(["R", "Control"])) return (" ", " ");
                 else if (input.MatchesInput("Backspace"))
                 {
@@ -221,7 +215,7 @@ namespace TicketBookingApp
                 else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
                 else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
                 else if (input.MatchesInput("DownArrow") && inputBoxSelection < 2) inputBoxSelection++;
-                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
                 else if (input.MatchesInput(["B", "Control"])) return (" ", " ", " ");
                 else if (input.MatchesInput("Backspace"))
                 {
@@ -340,7 +334,7 @@ namespace TicketBookingApp
                 else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
                 else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
                 else if (input.MatchesInput("DownArrow") && inputBoxSelection < 3) inputBoxSelection++;
-                else if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
                 else if (input.MatchesInput(["B", "Control"])) return null;
                 else if (input.MatchesInput("Backspace"))
                 {
@@ -424,7 +418,7 @@ namespace TicketBookingApp
                 else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
                 else if (input.MatchesInput(["E", "Control"]))
                 {
-                    Exit();
+                    Program.Exit();
                 }
                 else if (input.MatchesInput("Tab"))
                 {
@@ -453,7 +447,8 @@ namespace TicketBookingApp
                 $"First Name: {user.CustomerFirstName}",
                 $"Last Name: {user.CustomerLastName}",
                 $"Phone: {user.CustomerPhone}",
-                $"Email: {user.CustomerEmail}"
+                $"Email: {user.CustomerEmail}",
+                $"Is Admin: {(user.CustomerIsAdmin ? "Yes" : "No")}"
             ];
 
             int longestOption = userDetails.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
@@ -477,7 +472,7 @@ namespace TicketBookingApp
 
                 if (input.MatchesInput(["E", "Control"]))
                 {
-                    Exit();
+                    Program.Exit();
                 }
                 else if (input.MatchesInput(["B", "Control"]))
                 {
@@ -640,7 +635,7 @@ namespace TicketBookingApp
                 input = Console.ReadKey();
                 Console.CursorVisible = false;
 
-                if (input.MatchesInput(["E", "Control"])) Exit();
+                if (input.MatchesInput(["E", "Control"])) Program.Exit();
                 else if (input.MatchesInput(["B", "Control"])) return null;
                 else if (input.MatchesInput("UpArrow") && selectedLine > 0) selectedLine--;
                 else if (input.MatchesInput("UpArrow") && selectedLine == 0) selectedLine = lastLine;
