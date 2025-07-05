@@ -23,4 +23,22 @@ namespace TicketBookingApp.Table_Classes
             PostalCode = postalCode;
         }
     }
+
+    public class FullCustomerAddress : CustomerAddress
+    {
+        public string CityName { get; set; }
+
+        [Obsolete("", true)]
+        public new int CityId
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
+
+        public FullCustomerAddress(int addressId, int customerId, string streetAddress, string postalCode)
+            : base(addressId, customerId, streetAddress, 0, postalCode)
+        {
+            CityName = "";
+        }
+    }
 }

@@ -30,7 +30,7 @@ namespace TicketBookingApp.Table_Classes
 
     public class FullCustomer : Customer
     {
-        public List<CustomerAddress> CustomerAddresses;
+        public List<FullCustomerAddress> CustomerAddresses { get; set; }
 
         public FullCustomer(
             int customerId,
@@ -40,7 +40,7 @@ namespace TicketBookingApp.Table_Classes
             string customerEmail,
             string customerUsername,
             string customerPassword,
-            List<CustomerAddress>? customerAddresses = null)
+            List<FullCustomerAddress>? customerAddresses = null)
         : base(
             customerId,
             customerFirstName,
@@ -50,13 +50,6 @@ namespace TicketBookingApp.Table_Classes
             customerUsername,
             customerPassword)
         {
-            CustomerId = customerId;
-            CustomerFirstName = customerFirstName;
-            CustomerLastName = customerLastName;
-            CustomerPhone = customerPhone;
-            CustomerEmail = customerEmail;
-            CustomerUsername = customerUsername;
-            CustomerPassword = customerPassword;
             CustomerAddresses = customerAddresses ?? new();
         }
     }

@@ -1,4 +1,6 @@
-﻿using System.Reflection.Metadata;
+﻿// Get all lines of code
+// gitbash -
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -6,14 +8,16 @@ namespace TicketBookingApp
     public class Program
     {
         private static string Username = string.Empty;
+        private static StorageManager storageManager;
+        private static ConsoleView view;
 
         static void Main(string[] args)
         {
             string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True;" +
                 "Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
 
-            var storageManager = new StorageManager(connectionString);
-            var view = new ConsoleView();
+            storageManager = new StorageManager(connectionString);
+            view = new ConsoleView();
             //storageManager.Setup();
             //return;
 
@@ -23,14 +27,14 @@ namespace TicketBookingApp
             {
                 if (!loggedIn)
                 {
-                    Username = LoginScreen(view, storageManager);
+                    Username = LoginScreen();
                     loggedIn = true;
                 }
 
                 Dictionary<string, int> menuOptions = new()
                 {
                     { "View My Profile", 1 },
-                    { "View My Bookings", 2 },
+                    { "Browse Concerts", 2 },
                     { "Log Out", 3 }
                 };
 
@@ -42,6 +46,10 @@ namespace TicketBookingApp
                     loggedIn = false;
                     continue;
                 }
+                else if (exitCode == 2)
+                {
+                    BrowseConcertScreen();
+                }
                 else if (exitCode == 1)
                 {
                     List<Customer>? users = storageManager.Customers(SQLAction.Select,
@@ -49,14 +57,14 @@ namespace TicketBookingApp
                                                          new() { { "@Username", Username } });
 
                     if (users != null && users.Count == 1)
-                        view.ViewUserDetails(users[0]);
+                        view.ViewUserDetails(storageManager, users[0].CustomerId);
                     else
                         throw new Exception("Should not be more than one user to a username");
                 }
             }
         }
 
-        private static string LoginScreen(ConsoleView view, StorageManager storageManager)
+        private static string LoginScreen()
         {
             bool loggedIn = false;
             int errorCode = 0;
@@ -70,7 +78,7 @@ namespace TicketBookingApp
                 }
                 else if (Username == " " && password == " ")
                 {
-                    RegisterScreen(view, storageManager);
+                    RegisterScreen();
                     errorCode = 0;
                     continue;
                 }
@@ -96,7 +104,7 @@ namespace TicketBookingApp
             return Username;
         }
 
-        private static void RegisterScreen(ConsoleView view, StorageManager storageManager)
+        private static void RegisterScreen()
         {
             bool registered = false;
             int errorCode = 0;
@@ -162,13 +170,13 @@ namespace TicketBookingApp
                     }
 
                     Customer customerLoginDetails = new(-1, null, null, null, null, username, password);
-                    EditProfileScreen(view, storageManager, customerLoginDetails);
+                    EditProfileScreen(customerLoginDetails);
                     registered = true;
                 }
             } while (!registered);
         }
 
-        private static void EditProfileScreen(ConsoleView view, StorageManager storageManager, Customer existing)
+        private static void EditProfileScreen(Customer existing)
         {
             bool edited = false;
             int errorCode = 0;
@@ -176,7 +184,7 @@ namespace TicketBookingApp
 
             do
             {
-                newCustomer = view.UserDetails(errorCode);
+                newCustomer = view.EditUserDetails(errorCode);
 
                 if (newCustomer == null) return;
 
@@ -244,6 +252,25 @@ namespace TicketBookingApp
                 loading.Interrupt();
 
             } while (!edited);
+        }
+
+        private static void BrowseConcertScreen()
+        {
+            int userId = 0;
+            string initSearch = "";
+            string initPage = "0 0";
+            while (true)
+            {
+                Customer? idSearchPage = view.CustomerSearch(storageManager, initSearch, initPage);
+
+                if (idSearchPage == null) return;
+
+                userId = idSearchPage.CustomerId;
+                initSearch = idSearchPage.CustomerFirstName;
+                initPage = idSearchPage.CustomerLastName;
+
+                view.ViewUserDetails(storageManager, userId);
+            }
         }
     }
 }

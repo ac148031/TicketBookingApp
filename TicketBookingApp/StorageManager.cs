@@ -338,7 +338,7 @@ namespace TicketBookingApp
                     List<FullCustomer> fullCustomers = new();
                     sqlString = "SELECT * FROM sales.tblCustomers " + whereClause + ";";
 
-                    List<CustomerAddress> addresses = CustomerAddresses(SQLAction.Select) ?? new();
+                    List<FullCustomerAddress> addresses = FullCustomerAddresses(SQLAction.Select) ?? new();
 
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
@@ -474,6 +474,51 @@ namespace TicketBookingApp
                         cmd.ExecuteNonQuery();
                     }
                     return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
+        public List<FullCustomerAddress>? FullCustomerAddresses(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        {
+            string sqlString;
+
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<FullCustomerAddress> fullCustomerAddresses = new();
+                    sqlString = "SELECT * FROM sales.tblCustomerAddresses " + whereClause + ";";
+
+                    Dictionary<int, string> cities = Cities(SQLAction.Select)?.ToDictionary(city => city.CityId, city => city.CityName) ?? new();
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            FullCustomerAddress current = new FullCustomerAddress(
+                                reader.GetInt32(reader.GetOrdinal("addressId")),
+                                reader.GetInt32(reader.GetOrdinal("customerId")),
+                                reader.GetString(reader.GetOrdinal("streetAddress")),
+                                reader.GetString(reader.GetOrdinal("postalCode")));
+
+                            int cityId = reader.GetInt32(reader.GetOrdinal("cityId"));
+                            current.CityName = cities[cityId];
+
+                            fullCustomerAddresses.Add(current);
+                        }
+                    }
+                    return fullCustomerAddresses;
 
                 default:
                     throw new Exception("Invalid SQLAction");

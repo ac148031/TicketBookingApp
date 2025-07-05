@@ -248,7 +248,7 @@ namespace TicketBookingApp
             }
         }
 
-        public Customer UserDetails(int errorCode)
+        public Customer EditUserDetails(int errorCode)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -341,7 +341,7 @@ namespace TicketBookingApp
                 else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
                 else if (input.MatchesInput("DownArrow") && inputBoxSelection < 3) inputBoxSelection++;
                 else if (input.MatchesInput(["E", "Control"])) Exit();
-                else if (input.MatchesInput("B") && (input.Modifiers & ConsoleModifiers.Control) != 0) return null;
+                else if (input.MatchesInput(["B", "Control"])) return null;
                 else if (input.MatchesInput("Backspace"))
                 {
                     if (inputFieldsDict[inputBoxSelection].Length > 0) inputFieldsDict[inputBoxSelection].Length--;
@@ -439,8 +439,11 @@ namespace TicketBookingApp
             }
         }
 
-        public int ViewUserDetails(Customer user)
+        public int ViewUserDetails(StorageManager storageManager, int userId)
         {
+            Dictionary<string, object> parameters = new() { { "@id", userId } };
+            FullCustomer? user = storageManager.FullCustomers(SQLAction.Select, "WHERE customerId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
+
             Console.Clear();
             Console.CursorVisible = false;
             DrawHeader($"{user.CustomerUsername}'s Profile");
@@ -481,10 +484,227 @@ namespace TicketBookingApp
                     return 0;
                 }
             }
-
-            return 0;
         }
 
+        public Customer? CustomerSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Concerts");
+            DrawFooter(["Back - Ctrl + B ", "Detailed View - Enter", "Arrow keys to select"]);
+
+            // Draw searchbox
+            string[] searchBox = [
+                "┌─Search" + new string('─', WindowWidth - 11) + "┐",
+                "│" + initSearch + new string(' ', WindowWidth - 4 - initSearch.Length) + "│",
+                "└" + new string('─', WindowWidth - 4) + "┘"
+                ];
+
+            for (int i = 0; i < searchBox.Length; i++)
+            {
+                Console.SetCursorPosition(1, 2 + i);
+                Console.Write(searchBox[i]);
+            }
+
+            // 4 to account for header + footer, 1 for header
+            int paddingAmount = 1;
+            int dataDisplayHeight = WindowHeight - searchBox.Length - (paddingAmount * 2) - 4 - 1;
+            int dataDisplayWidth = WindowWidth - paddingAmount * 2;
+
+            // Get column widths
+            var data = storageManager.Customers(SQLAction.Select);
+
+            List<int> tempColumnSizes =
+            [
+                data.Max(c => c.CustomerId.ToString().Length),
+                data.Max(c => c.CustomerFirstName.Length + c.CustomerLastName.Length),
+                data.Max(c => c.CustomerEmail.Length),
+                data.Max(c => c.CustomerPhone.Length),
+                data.Max(c => c.CustomerUsername.Length)
+            ];
+
+            // Make sure it isnt bigger than the width
+            while (tempColumnSizes.Sum() > dataDisplayWidth - 4)
+            {
+                int largestColumnIndex = tempColumnSizes.LastIndexOf(tempColumnSizes.Max());
+                tempColumnSizes[largestColumnIndex]--;
+            }
+
+            List<int> columnSizes = [tempColumnSizes[0]];
+            tempColumnSizes = tempColumnSizes[1..];
+
+            // Make sure it fills the width
+            while (tempColumnSizes.Sum() < dataDisplayWidth - 4 - columnSizes[0])
+            {
+                int largestColumnIndex = tempColumnSizes.IndexOf(tempColumnSizes.Min());
+                tempColumnSizes[largestColumnIndex]++;
+            }
+
+            columnSizes.AddRange(tempColumnSizes);
+
+            string columnHeadings = "Id".PadRight(columnSizes[0] + 1) +
+                                    "Name".PadRight(columnSizes[1] + 1) +
+                                    "Email".PadRight(columnSizes[2] + 1) +
+                                    "Phone".PadRight(columnSizes[3] + 1) +
+                                    "Username".PadRight(columnSizes[4]);
+
+            Console.SetCursorPosition(1, 6);
+            Console.BackgroundColor = ConsoleColor.DarkCyan;
+            Console.Write(columnHeadings);
+            Console.ResetColor();
+
+            // Search
+
+            string whereClause = "WHERE customerFirstName LIKE @search + '%' " +
+                    "OR customerLastName LIKE @search + '%' " +
+                    "OR customerFirstName + ' ' + customerLastName LIKE @search + '%' " +
+                    "OR customerEmail LIKE @search + '%' " +
+                    "OR CAST( customerId AS VARCHAR) LIKE @search + '%' " +
+                    "OR customerUsername LIKE @search + '%'";
+            Dictionary<string, object> parameters;
+            StringBuilder sb = new(initSearch);
+            ConsoleKeyInfo input;
+
+            int selectedLine = int.Parse(initPage.Split(' ')[0]);
+            int selectedPage = int.Parse(initPage.Split(' ')[1]);
+
+            int xOffset;
+
+            while (true)
+            {
+                int lastLine = dataDisplayHeight + 1;
+                int lastPage = 0;
+
+                //Display Data
+
+                parameters = new() { { "@search", sb.ToString() } };
+                data = storageManager.Customers(SQLAction.Select, whereClause, parameters);
+
+                for (int i = 0; i < dataDisplayHeight; i++)
+                {
+                    Console.SetCursorPosition(1, 7 + i);
+                    if (i + (selectedPage * dataDisplayHeight) < data.Count)
+                    {
+                        Customer current = data[i + (selectedPage * dataDisplayHeight)];
+
+                        string[] detailList = [
+                            current.CustomerId.ToString(),
+                            current.CustomerFirstName + " " + current.CustomerLastName,
+                            current.CustomerEmail,
+                            current.CustomerPhone,
+                            current.CustomerUsername
+                            ];
+
+                        string details = "";
+
+                        for (int j = 0; j < columnSizes.Count; j++)
+                        {
+                            if (j != 0) details += " ";
+                            details += detailList[j].PadRight(columnSizes[j])[..columnSizes[j]];
+                        }
+
+                        if (i == selectedLine)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.BackgroundColor = ConsoleColor.White;
+                        }
+
+                        Console.Write(details);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.Write(new string(' ', WindowWidth - 1));
+                    }
+                }
+
+                // Amount of data records / how many records per page
+                // Whichever is lower, the display height or the the number of records on screen minus one (to get the last record)
+                lastPage = (int)Math.Floor((double)data.Count / dataDisplayHeight);
+                lastLine = Math.Min(dataDisplayHeight, data.Count - (dataDisplayHeight * selectedPage)) - 1;
+
+                // Search Data
+                if (sb.Length < WindowWidth - 5)
+                {
+                    xOffset = sb.Length;
+                }
+                else
+                {
+                    xOffset = WindowWidth - 5;
+                    Console.SetCursorPosition(2, 3);
+                    Console.Write(sb.ToString(sb.Length - xOffset, xOffset) + " ");
+                }
+
+                Console.SetCursorPosition(2 + xOffset, 3);
+                Console.CursorVisible = true;
+                input = Console.ReadKey();
+                Console.CursorVisible = false;
+
+                if (input.MatchesInput(["E", "Control"])) Exit();
+                else if (input.MatchesInput(["B", "Control"])) return null;
+                else if (input.MatchesInput("UpArrow") && selectedLine > 0) selectedLine--;
+                else if (input.MatchesInput("UpArrow") && selectedLine == 0) selectedLine = lastLine;
+                else if (input.MatchesInput("DownArrow") && selectedLine < lastLine) selectedLine++;
+                else if (input.MatchesInput("DownArrow") && selectedLine == lastLine) selectedLine = 0;
+                else if (input.MatchesInput("RightArrow"))
+                {
+                    selectedLine = 0;
+                    if (selectedPage < lastPage) selectedPage++;
+                    else if (selectedPage == lastPage) selectedPage = 0;
+                }
+                else if (input.MatchesInput("LeftArrow"))
+                {
+                    selectedLine = 0;
+                    if (selectedPage > 0) selectedPage--;
+                    else if (selectedPage == 0) selectedPage = lastPage;
+                }
+                else if (input.MatchesInput("Enter"))
+                {
+                    int userId = data[selectedLine + (selectedPage * dataDisplayHeight)].CustomerId;
+                    string selectSave = selectedLine.ToString() + " " + selectedPage.ToString();
+                    string searchSave = sb.ToString();
+
+                    return new Customer(
+                        userId,
+                        searchSave,
+                        selectSave,
+                        string.Empty,
+                        string.Empty,
+                        string.Empty,
+                        string.Empty
+                        );
+                }
+                else if (input.MatchesInput("Backspace"))
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Length--;
+                        if (sb.Length < WindowWidth - 4)
+                        {
+                            Console.SetCursorPosition(2, 3);
+                            Console.Write(sb.ToString(0, sb.Length) + " ");
+                        }
+
+                        selectedPage = 0;
+                        selectedLine = 0;
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c) || c == ' ')
+                    {
+                        sb.Append(c);
+
+                        selectedPage = 0;
+                        selectedLine = 0;
+                    }
+                }
+            }
+        }
+
+        // Sub Methods
         private void DrawHeader(string? screen = null)
         {
             string line = new('─', WindowWidth);
