@@ -14,10 +14,10 @@ namespace TicketBookingApp.Table_Classes
         public DateOnly ConcertDate { get; set; }
         public TimeOnly ConcertTime { get; set; }
         public int ConcertAvailTickets { get; set; }
-        public int ConcertTicketPrice { get; set; }
+        public decimal ConcertTicketPrice { get; set; }
         public int LocationId { get; set; }
 
-        public Concert(int concertId, string concertName, string concertDescription, DateOnly concertDate, TimeOnly concertTime, int concertAvailTickets, int concertTicketPrice, int locationId)
+        public Concert(int concertId, string concertName, string concertDescription, DateOnly concertDate, TimeOnly concertTime, int concertAvailTickets, decimal concertTicketPrice, int locationId)
         {
             ConcertId = concertId;
             ConcertName = concertName;
@@ -27,6 +27,24 @@ namespace TicketBookingApp.Table_Classes
             ConcertAvailTickets = concertAvailTickets;
             ConcertTicketPrice = concertTicketPrice;
             LocationId = locationId;
+        }
+    }
+
+    public class FullConcert : Concert
+    {
+        public FullLocation ConcertLocation { get; set; }
+
+        [Obsolete("", true)]
+        public new int LocationId
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
+
+        public FullConcert(int concertId, string concertName, string concertDescription, DateOnly concertDate, TimeOnly concertTime, int concertAvailTickets, decimal concertTicketPrice)
+            : base(concertId, concertName, concertDescription, concertDate, concertTime, concertAvailTickets, concertTicketPrice, 0)
+        {
+            ConcertLocation = null;
         }
     }
 }

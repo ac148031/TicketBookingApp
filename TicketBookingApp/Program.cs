@@ -9,8 +9,10 @@ namespace TicketBookingApp
     {
         private static string Username = string.Empty;
         private static Customer? currentUser = null;
-        private static StorageManager storageManager;
-        private static ConsoleView view;
+
+        private static string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
+        private static StorageManager storageManager = new(connectionString);
+        private static readonly ConsoleView view = new();
 
         public static void Exit()
         {
@@ -21,11 +23,8 @@ namespace TicketBookingApp
 
         static void Main(string[] args)
         {
-            string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True;" +
-                "Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
-
-            storageManager = new StorageManager(connectionString);
-            view = new ConsoleView();
+            view.ConcertSearch(storageManager);
+            Exit();
 
             //storageManager.Setup();
             //Exit();
@@ -115,7 +114,7 @@ namespace TicketBookingApp
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
                                                                          $"WHERE customerUsername = @Username",
                                                                          new() { { "@Username", Username } });
-                    if (customers.Any(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
+                    if (customers.All(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
                     {
                         errorCode = 0;
                         loggedIn = true;

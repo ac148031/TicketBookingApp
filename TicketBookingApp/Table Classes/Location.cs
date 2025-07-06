@@ -23,4 +23,22 @@ namespace TicketBookingApp.Table_Classes
             LocationCapacity = locationCapacity;
         }
     }
+
+    public class FullLocation : Location
+    {
+        public string CityName { get; set; }
+
+        [Obsolete("", true)]
+        public new int CityId
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
+
+        public FullLocation(int locationId, string locationName, string locationAddress, int locationCapacity)
+            : base(locationId, locationName, 0, locationAddress, locationCapacity)
+        {
+            CityName = "";
+        }
+    }
 }

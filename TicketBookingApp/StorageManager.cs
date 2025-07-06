@@ -640,6 +640,54 @@ namespace TicketBookingApp
             }
         }
 
+        public List<FullConcert>? FullConcerts(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        {
+            string sqlString;
+
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<FullConcert> concerts = new();
+                    sqlString = "SELECT * FROM concerts.tblConcerts " + whereClause + ";";
+
+                    Dictionary<int, FullLocation> locations = FullLocations(SQLAction.Select)?.ToDictionary(l => l.LocationId, l => l) ?? new();
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            FullConcert current = new FullConcert(
+                                reader.GetInt32(reader.GetOrdinal("concertId")),
+                                reader.GetString(reader.GetOrdinal("concertName")),
+                                reader.GetString(reader.GetOrdinal("concertDescription")),
+                                DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("concertDate"))),
+                                TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("concertTime"))),
+                                reader.GetInt32(reader.GetOrdinal("concertAvailTickets")),
+                                reader.GetDecimal(reader.GetOrdinal("concertTicketPrice")));
+
+                            int locationId = reader.GetInt32(reader.GetOrdinal("locationId"));
+                            current.ConcertLocation = locations[locationId];
+
+                            concerts.Add(current);
+                        }
+                    }
+                    return concerts;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
         public List<ConcertGenre>? ConcertGenre(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, ConcertGenre? insertConcertGenre = null)
         {
             string sqlString;
@@ -932,6 +980,51 @@ namespace TicketBookingApp
                         cmd.ExecuteNonQuery();
                     }
                     return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
+        public List<FullLocation>? FullLocations(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        {
+            string sqlString;
+
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<FullLocation> fullLocations = new();
+                    sqlString = "SELECT * FROM concerts.tblLocations " + whereClause + ";";
+
+                    Dictionary<int, string> cities = Cities(SQLAction.Select)?.ToDictionary(city => city.CityId, city => city.CityName) ?? new();
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            FullLocation current = new FullLocation(
+                                reader.GetInt32(reader.GetOrdinal("locationId")),
+                                reader.GetString(reader.GetOrdinal("locationName")),
+                                reader.GetString(reader.GetOrdinal("locationAddress")),
+                                reader.GetInt32(reader.GetOrdinal("locationCapacity")));
+
+                            int cityId = reader.GetInt32(reader.GetOrdinal("cityId"));
+                            current.CityName = cities[cityId];
+
+                            fullLocations.Add(current);
+                        }
+                    }
+                    return fullLocations;
 
                 default:
                     throw new Exception("Invalid SQLAction");
