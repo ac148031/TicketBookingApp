@@ -736,29 +736,30 @@ namespace TicketBookingApp
             // Get column widths
             var data = storageManager.FullConcerts(SQLAction.Select);
 
-            List<int> tempColumnSizes =
+            List<int> columnSizes =
             [
                 data.Max(c => c.ConcertName.Length),
                 data.Max(c => c.ConcertLocation.LocationName.Length),
                 data.Max(c => new DateTime(c.ConcertDate, c.ConcertTime).ToString("g").Length),
-                data.Max(c => c.ConcertTicketPrice.ToString("C").Length)
+                data.Max(c => c.ConcertTicketPrice.ToString("C").Length),
+                data.Max(c => string.Join(", ", c.GenreList.Select(g => g.GenreName)).Length)
             ];
 
             // Make sure it isnt bigger than the width
-            while (tempColumnSizes.Sum() > dataDisplayWidth - tempColumnSizes.Count + 1)
+            while (columnSizes.Sum() > dataDisplayWidth - columnSizes.Count)
             {
-                int largestColumnIndex = tempColumnSizes.LastIndexOf(tempColumnSizes.Max());
-                tempColumnSizes[largestColumnIndex]--;
+                int largestColumnIndex = columnSizes.LastIndexOf(columnSizes.Max());
+                columnSizes[largestColumnIndex]--;
             }
 
             List<int> columnSizes = [tempColumnSizes[0]];
             tempColumnSizes = tempColumnSizes[1..];
 
             // Make sure it fills the width
-            while (tempColumnSizes.Sum() < dataDisplayWidth - tempColumnSizes.Count + 1 - columnSizes[0])
+            while (columnSizes.Sum() < dataDisplayWidth - columnSizes.Count)
             {
-                int largestColumnIndex = tempColumnSizes.IndexOf(tempColumnSizes.Min());
-                tempColumnSizes[largestColumnIndex]++;
+                int largestColumnIndex = columnSizes.IndexOf(columnSizes.Min());
+                columnSizes[largestColumnIndex]++;
             }
 
             columnSizes.AddRange(tempColumnSizes);
@@ -766,7 +767,8 @@ namespace TicketBookingApp
             string columnHeadings = "Concert".PadRight(columnSizes[0] + 1) +
                                     "Venue".PadRight(columnSizes[1] + 1) +
                                     "Date + Time".PadRight(columnSizes[2] + 1) +
-                                    "Price".PadRight(columnSizes[3] + 1);
+                                    "Price".PadRight(columnSizes[3] + 1) +
+                                    "Genres".PadRight(columnSizes[4]);
 
             Console.SetCursorPosition(1, 6);
             Console.BackgroundColor = ConsoleColor.DarkCyan;
@@ -775,8 +777,7 @@ namespace TicketBookingApp
 
             // Search
 
-            string whereClause = "WHERE concertName LIKE @search + '%' " +
-                    "OR concertDescription LIKE '%' + @search + '%' ";
+            string whereClause = "WHERE concertName LIKE '%' + @search + '%' ";
             Dictionary<string, object> parameters;
             StringBuilder sb = new(initSearch);
             ConsoleKeyInfo input;
@@ -807,7 +808,8 @@ namespace TicketBookingApp
                             current.ConcertName,
                             current.ConcertLocation.LocationName,
                             new DateTime(current.ConcertDate, current.ConcertTime).ToString("g"),
-                            current.ConcertTicketPrice.ToString("C")
+                            current.ConcertTicketPrice.ToString("C"),
+                            string.Join(", ", current.GenreList.Select(g => g.GenreName))
                             ];
 
                         string details = "";

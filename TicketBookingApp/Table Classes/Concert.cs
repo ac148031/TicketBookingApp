@@ -34,6 +34,8 @@ namespace TicketBookingApp.Table_Classes
     {
         public FullLocation ConcertLocation { get; set; }
 
+        public List<Genre> GenreList { get; set; }
+
         [Obsolete("", true)]
         public new int LocationId
         {

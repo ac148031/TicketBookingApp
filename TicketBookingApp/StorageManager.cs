@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
 using System.Data;
 using TicketBookingApp.Table_Classes;
 
@@ -652,6 +653,9 @@ namespace TicketBookingApp
 
                     Dictionary<int, FullLocation> locations = FullLocations(SQLAction.Select)?.ToDictionary(l => l.LocationId, l => l) ?? new();
 
+                    var concertIdsToGenreIds = ConcertGenres(SQLAction.Select)?.GroupBy(cg => cg.ConcertId).ToDictionary(cg => cg.Key, cg => cg.Select(g => g.GenreId).ToList()) ?? throw new Exception("Null ConcertGenres");
+                    var genreIdsToGenre = Genres(SQLAction.Select)?.ToDictionary(g => g.GenreId) ?? throw new Exception("Null Genres");
+
                     using (SqlCommand cmd = new(sqlString, connection))
                     {
                         if (parameters != null)
@@ -677,6 +681,17 @@ namespace TicketBookingApp
 
                             int locationId = reader.GetInt32(reader.GetOrdinal("locationId"));
                             current.ConcertLocation = locations[locationId];
+                            int concertId = reader.GetInt32(reader.GetOrdinal("concertId"));
+                            List<Genre> genres;
+                            try
+                            {
+                                genres = concertIdsToGenreIds[concertId].Select(cg => genreIdsToGenre[cg]).ToList();
+                            }
+                            catch
+                            {
+                                genres = new List<Genre>();
+                            }
+                            current.GenreList = genres;
 
                             concerts.Add(current);
                         }
@@ -688,7 +703,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<ConcertGenre>? ConcertGenre(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, ConcertGenre? insertConcertGenre = null)
+        public List<ConcertGenre>? ConcertGenres(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, ConcertGenre? insertConcertGenre = null)
         {
             string sqlString;
 
