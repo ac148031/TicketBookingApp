@@ -1,6 +1,9 @@
 ﻿// Get all lines of code
 // gitbash -
 // cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l
+using Microsoft.VisualBasic.FileIO;
+using System;
+using System.ComponentModel.Design;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -23,9 +26,6 @@ namespace TicketBookingApp
 
         static void Main(string[] args)
         {
-            view.ConcertSearch(storageManager);
-            Exit();
-
             //storageManager.Setup();
             //Exit();
 
@@ -72,11 +72,11 @@ namespace TicketBookingApp
                 switch (exitCode)
                 {
                     case 1:
-                        view.ViewUserDetails(storageManager, currentUser.CustomerId);
+                        ViewProfileScreen();
                         break;
 
                     case 2:
-
+                        ConcertSearchScreen();
                         break;
 
                     case 3:
@@ -281,11 +281,108 @@ namespace TicketBookingApp
             } while (!edited);
         }
 
+        private static void ViewProfileScreen()
+        {
+            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+
+            Dictionary<string, int> menuOptions = new()
+            {
+                { "Edit Profile", 1 },
+                { "Delete Profile", 2 }
+            };
+
+            while (true)
+            {
+                int exitCode = view.ViewUserDetails(storageManager, currentUser.CustomerId, menuOptions);
+
+                if (exitCode == 0) return;
+                else if (exitCode == 1)
+                {
+                    EditProfileScreen(currentUser);
+                    currentUser = storageManager.Customers(SQLAction.Select,
+                                                               $"WHERE customerUsername = @Username",
+                                                             new() { { "@Username", Username } })?.FirstOrDefault() ?? throw new Exception("Null customer returned");
+                }
+                else if (exitCode == 2)
+                {
+                    //not working
+                    break;
+                    DeleteProfileScreen();
+                }
+            }
+        }
+
+        private static void DeleteProfileScreen()
+        {
+            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+
+            while (true)
+            {
+                int exitCode = view.DeleteCustomer(storageManager, currentUser.CustomerId);
+
+                //if (exitCode)
+            }
+        }
+
+        private static void ConcertSearchScreen()
+        {
+            if (currentUser == null) throw new Exception("Cannot run this method with null customer");
+
+            int concertId = 0;
+            string initSearch = "";
+            string initPage = "0 0";
+            while (true)
+            {
+                Concert? idSearchPage = view.ConcertSearch(storageManager, initSearch, initPage);
+
+                if (idSearchPage == null) return;
+
+                concertId = idSearchPage.ConcertId;
+                initSearch = idSearchPage.ConcertName;
+                initPage = idSearchPage.ConcertDescription;
+
+                Dictionary<string, int> menuOptions;
+                if (currentUser.CustomerIsAdmin)
+                {
+                    menuOptions = new()
+                    {
+                        { "Buy ticket", 1 },
+                        { "Edit Concert", 2 },
+                        { "Delete Concert", 3 }
+                    };
+                }
+                else
+                {
+                    menuOptions = new()
+                    {
+                        { "Buy ticket", 1 }
+                    };
+                }
+
+                while (true)
+                {
+                    int exitCode = view.ViewConcertDetails(storageManager, concertId, menuOptions);
+
+                    if (exitCode == 0) break;
+                    else if (exitCode == 1) ;
+                    else if (exitCode == 2) ;
+                    else if (exitCode == 3) ;
+                }
+            }
+        }
+
         private static void CustomerSearchScreen()
         {
             int userId = 0;
             string initSearch = "";
             string initPage = "0 0";
+
+            Dictionary<string, int> menuOptions = new()
+            {
+                { "Edit Customer", 1 },
+                { "Delete Customer", 2 }
+            };
+
             while (true)
             {
                 Customer? idSearchPage = view.CustomerSearch(storageManager, initSearch, initPage);
@@ -296,7 +393,7 @@ namespace TicketBookingApp
                 initSearch = idSearchPage.CustomerFirstName;
                 initPage = idSearchPage.CustomerLastName;
 
-                view.ViewUserDetails(storageManager, userId);
+                view.ViewUserDetails(storageManager, userId, menuOptions);
             }
         }
     }

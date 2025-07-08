@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security;
+using System.Text;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -433,15 +434,17 @@ namespace TicketBookingApp
             }
         }
 
-        public int ViewUserDetails(StorageManager storageManager, int userId)
+        public int ViewUserDetails(StorageManager storageManager, int userId, Dictionary<string, int> menuOptions)
         {
             Dictionary<string, object> parameters = new() { { "@id", userId } };
-            FullCustomer? user = storageManager.FullCustomers(SQLAction.Select, "WHERE customerId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
+            FullCustomer? user = storageManager.FullCustomers(SQLAction.Select, "WHERE cs.customerId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
 
             Console.Clear();
             Console.CursorVisible = false;
             DrawHeader($"{user.CustomerUsername}'s Profile");
-            DrawFooter(["Edit Details - Ctrl + D", "Back - Ctrl + B"]);
+            DrawFooter(["Back - Ctrl + B"]);
+
+            int halfSize = (int)Math.Floor((WindowWidth - 3) / 2d);
 
             List<string> userDetails = [
                 $"Name: {user.CustomerFirstName} {user.CustomerLastName}",
@@ -461,25 +464,67 @@ namespace TicketBookingApp
                 }
             }
 
-            int longestOption = userDetails.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
-
-            int startXPos = (int)Math.Round((WindowWidth / 4d) - (longestOption / 2d));
-            int startYPos = (int)Math.Round((WindowHeight / 2d) - (userDetails.Count / 2d));
+            int detailYPos = (int)Math.Round((WindowHeight / 2d) - (userDetails.Count / 2d));
 
             for (int i = 0; i < userDetails.Count; i++)
             {
                 string detail = userDetails[i];
-                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.SetCursorPosition(1, detailYPos + i);
                 Console.Write(detail);
             }
 
+            string[] menuOptionKeys = menuOptions.Keys.ToArray();
+
+            int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
+            longestOption = longestOption < 23 ? 23 : longestOption;
+
+            int startXPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - ((longestOption + 4) / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (menuOptionKeys.Length + 1));
+
+            for (int i = 0; i < (2 * menuOptionKeys.Length) + 1; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                if (i % 2 == 0)
+                {
+                    if (i == 0)
+                    {
+                        Console.Write("┌" + new string('─', longestOption + 2) + "┐");
+                    }
+                    else if (i == menuOptionKeys.Length * 2)
+                    {
+                        Console.Write("└" + new string('─', longestOption + 2) + "┘");
+                    }
+                    else
+                    {
+                        Console.Write("├" + new string('─', longestOption + 2) + "┤");
+                    }
+                }
+                else
+                {
+                    Console.Write("│" + new string(' ', longestOption + 2) + "│");
+                }
+            }
+
+            int selectedOption = 0;
             ConsoleKeyInfo input;
 
             while (true)
             {
+                for (int i = 0; i < menuOptionKeys.Length; i++)
+                {
+                    int xPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - (menuOptionKeys[i].Length / 2d));
+                    Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
+                    if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                    else Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(menuOptionKeys[i]);
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
                 input = Console.ReadKey(true);
 
-                if (input.MatchesInput(["E", "Control"]))
+                if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.MatchesInput(["E", "Control"]))
                 {
                     Program.Exit();
                 }
@@ -487,7 +532,87 @@ namespace TicketBookingApp
                 {
                     return 0;
                 }
+                else if (input.MatchesInput("Tab"))
+                {
+                    if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
+                    else selectedOption++;
+                }
+                else if (input.MatchesInput("Enter"))
+                {
+                    Console.CursorVisible = true;
+                    return menuOptions[menuOptionKeys[selectedOption]];
+                }
             }
+        }
+
+        public int DeleteCustomer(StorageManager storageManager, int userId)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Delete User");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            Dictionary<string, int> menuOptions = new()
+            {
+                { "No" , 0 },
+                { "Yes" , 1 }
+            };
+
+            string[] boxes = [
+                "┌─────────────────────────┐",
+                "│                         │",
+                "├─────────────────────────┤",
+                "│                         │",
+                "└─────────────────────────┘"
+                ];
+
+            string[] menuOptionKeys = menuOptions.Keys.ToArray();
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (27 / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - 3);
+
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(boxes[i]);
+            }
+
+            int selectedOption = 0;
+            ConsoleKeyInfo input;
+
+            while (true)
+            {
+                for (int i = 0; i < menuOptionKeys.Length; i++)
+                {
+                    int xPos = (int)Math.Round((WindowWidth / 2d) - (menuOptionKeys[i].Length / 2d));
+                    Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
+                    if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                    else Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(menuOptionKeys[i]);
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+                input = Console.ReadKey(true);
+
+                if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.MatchesInput(["E", "Control"]))
+                {
+                    Program.Exit();
+                }
+                else if (input.MatchesInput("Tab"))
+                {
+                    if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
+                    else selectedOption++;
+                }
+                else if (input.MatchesInput("Enter"))
+                {
+                    Console.CursorVisible = true;
+                    return menuOptions[menuOptionKeys[selectedOption]];
+                }
+            }
+
+            return 0;
         }
 
         public Customer? CustomerSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
@@ -708,6 +833,123 @@ namespace TicketBookingApp
             }
         }
 
+        public int ViewConcertDetails(StorageManager storageManager, int concertId, Dictionary<string, int> menuOptions)
+        {
+            Dictionary<string, object> parameters = new() { { "@id", concertId } };
+            FullConcert? concert = storageManager.FullConcerts(SQLAction.Select, "WHERE concertId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
+
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader($"Detailed View - {concert.ConcertName}");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            int halfSize = (int)Math.Floor((WindowWidth - 3) / 2d);
+            string description = concert.ConcertDescription;
+
+
+            List<string> concertDetails = [
+                .. LineWrap(concert.ConcertName, "Concert: ", halfSize),
+                .. LineWrap(new DateTime(concert.ConcertDate, concert.ConcertTime).ToString("f"), "Date and Time: ", halfSize),
+                .. LineWrap(concert.ConcertDescription, "Description: ", halfSize),
+                .. LineWrap(concert.ConcertLocation.LocationName, "Venue Name: ", halfSize),
+                .. LineWrap($"{ concert.ConcertLocation.LocationAddress}, { concert.ConcertLocation.CityName}", "Venue Address: ", halfSize),
+                .. LineWrap(concert.ConcertTicketPrice.ToString("C"), "Ticket Price: ", halfSize)
+                ];
+
+            for (int i = 0; i < concert.GenreList.Count; i++)
+            {
+                concertDetails.AddRange(LineWrap(string.Join(", ", concert.GenreList.Select(g => g.GenreName)), "Genres", halfSize));
+            }
+
+            int detailYPos = (int)Math.Round((WindowHeight / 2d) - (concertDetails.Count / 2d));
+
+            for (int i = 0; i < concertDetails.Count; i++)
+            {
+                string detail = concertDetails[i];
+                Console.SetCursorPosition(1, detailYPos + i);
+                Console.Write(detail);
+            }
+
+            string[] menuOptionKeys = menuOptions.Keys.ToArray();
+
+            int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
+            longestOption = longestOption < 23 ? 23 : longestOption;
+
+            int startXPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - ((longestOption + 4) / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (menuOptionKeys.Length + 1));
+
+            for (int i = 0; i < (2 * menuOptionKeys.Length) + 1; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                if (i % 2 == 0)
+                {
+                    if (i == 0)
+                    {
+                        Console.Write("┌" + new string('─', longestOption + 2) + "┐");
+                    }
+                    else if (i == menuOptionKeys.Length * 2)
+                    {
+                        Console.Write("└" + new string('─', longestOption + 2) + "┘");
+                    }
+                    else
+                    {
+                        Console.Write("├" + new string('─', longestOption + 2) + "┤");
+                    }
+                }
+                else
+                {
+                    Console.Write("│" + new string(' ', longestOption + 2) + "│");
+                }
+            }
+
+            //for (int i = 0; i < WindowHeight; i++)
+            //{
+            //    Console.SetCursorPosition(halfSize + 2, i);
+            //    Console.Write('|');
+            //    Console.SetCursorPosition(WindowWidth - (halfSize + 2), i);
+            //    Console.Write('|');
+            //}
+
+            int selectedOption = 0;
+            ConsoleKeyInfo input;
+
+            while (true)
+            {
+                for (int i = 0; i < menuOptionKeys.Length; i++)
+                {
+                    int xPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - (menuOptionKeys[i].Length / 2d));
+                    Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
+                    if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                    else Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write(menuOptionKeys[i]);
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+                input = Console.ReadKey(true);
+
+                if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.MatchesInput(["E", "Control"]))
+                {
+                    Program.Exit();
+                }
+                else if (input.MatchesInput(["B", "Control"]))
+                {
+                    return 0;
+                }
+                else if (input.MatchesInput("Tab"))
+                {
+                    if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
+                    else selectedOption++;
+                }
+                else if (input.MatchesInput("Enter"))
+                {
+                    Console.CursorVisible = true;
+                    return menuOptions[menuOptionKeys[selectedOption]];
+                }
+            }
+        }
+
         public Concert? ConcertSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
         {
             Console.Clear();
@@ -752,17 +994,12 @@ namespace TicketBookingApp
                 columnSizes[largestColumnIndex]--;
             }
 
-            List<int> columnSizes = [tempColumnSizes[0]];
-            tempColumnSizes = tempColumnSizes[1..];
-
             // Make sure it fills the width
             while (columnSizes.Sum() < dataDisplayWidth - columnSizes.Count)
             {
                 int largestColumnIndex = columnSizes.IndexOf(columnSizes.Min());
                 columnSizes[largestColumnIndex]++;
             }
-
-            columnSizes.AddRange(tempColumnSizes);
 
             string columnHeadings = "Concert".PadRight(columnSizes[0] + 1) +
                                     "Venue".PadRight(columnSizes[1] + 1) +
@@ -777,7 +1014,9 @@ namespace TicketBookingApp
 
             // Search
 
-            string whereClause = "WHERE concertName LIKE '%' + @search + '%' ";
+            string whereClause = "WHERE concertName LIKE '%' + @search + '%' " +
+                "OR locationName LIKE '%' + @search + '%' " +
+            "OR genreNames LIKE '%' + @search + '%'";
             Dictionary<string, object> parameters;
             StringBuilder sb = new(initSearch);
             ConsoleKeyInfo input;
@@ -923,6 +1162,30 @@ namespace TicketBookingApp
         }
 
         // Sub Methods
+
+        public List<string> LineWrap(string line, string label, int size)
+        {
+            List<string> wrappedLine = new();
+            string[] splitLine = line.Split(' ');
+            string temp = label[..(label.Length - 1)];
+
+            foreach (string s in splitLine)
+            {
+                if (temp.Length + s.Length + 1 > size)
+                {
+                    wrappedLine.Add(temp);
+                    temp = new string(' ', label.Length) + s;
+                }
+                else
+                {
+                    temp += " " + s;
+                }
+            }
+            wrappedLine.Add(temp);
+
+            return wrappedLine;
+        }
+
         private void DrawHeader(string? screen = null)
         {
             string line = new('─', WindowWidth);

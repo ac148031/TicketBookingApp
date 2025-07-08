@@ -1,13 +1,19 @@
-﻿SELECT   c.concertId AS [Concert ID],
-         c.concertName AS [Concert Name],
-         c.concertDescription AS [Description],
-         STRING_AGG(g.genreName, ', ') AS [Genres],
-         c.concertDate AS [Date],
-         CONVERT (VARCHAR (5), c.concertTime, 108) AS [Time],
-         c.concertAvailTickets AS [Available Tickets],
-         c.concertTicketPrice AS [Ticket Price],
-         l.locationName AS [Venue Name],
-         CONCAT(l.locationAddress, ', ', ct.cityName) AS [Venue]
+﻿SELECT   c.concertId,
+         c.concertName,
+         c.concertDescription,
+         c.concertDate,
+         c.concertTime, 
+         c.concertAvailTickets,
+         c.concertTicketPrice,
+         l.locationId,
+         l.locationName,
+         l.locationAddress,
+         l.locationCapacity,
+         ct.cityId,
+         ct.cityName,
+         STRING_AGG(g.genreId, ':') AS genreIds,
+         STRING_AGG(g.genreName, ':') AS genreNames,
+         STRING_AGG(g.genreDescription, ':') AS genreDescriptions
 FROM     concerts.tblConcerts AS c
          LEFT OUTER JOIN
          concerts.tblConcertGenres AS cg
@@ -21,7 +27,16 @@ FROM     concerts.tblConcerts AS c
          LEFT OUTER JOIN
          concerts.tblCities AS ct
          ON l.cityId = ct.cityId
-GROUP BY c.concertId, c.concertName, c.concertDescription, 
-         c.concertDate, c.concertTime, c.concertAvailTickets, 
-         c.concertTicketPrice, l.locationName, l.locationAddress, 
+GROUP BY c.concertId,
+         c.concertName,
+         c.concertDescription,
+         c.concertDate,
+         c.concertTime, 
+         c.concertAvailTickets,
+         c.concertTicketPrice,
+         l.locationId,
+         l.locationName,
+         l.locationAddress,
+         l.locationCapacity,
+         ct.cityId,
          ct.cityName;
