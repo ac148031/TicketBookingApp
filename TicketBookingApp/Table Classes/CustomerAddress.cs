@@ -40,5 +40,11 @@ namespace TicketBookingApp.Table_Classes
         {
             CityName = "";
         }
+
+        public FullCustomerAddress(int addressId, int customerId, string streetAddress, string cityName, string postalCode)
+            : base(addressId, customerId, streetAddress, 0, postalCode)
+        {
+            CityName = cityName;
+        }
     }
 }

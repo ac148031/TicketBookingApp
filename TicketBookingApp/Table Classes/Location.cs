@@ -35,10 +35,10 @@ namespace TicketBookingApp.Table_Classes
             set => throw new NotImplementedException();
         }
 
-        public FullLocation(int locationId, string locationName, string locationAddress, int locationCapacity)
+        public FullLocation(int locationId, string locationName, string locationAddress, string cityName, int locationCapacity)
             : base(locationId, locationName, 0, locationAddress, locationCapacity)
         {
-            CityName = "";
+            CityName = cityName;
         }
     }
 }
