@@ -1,9 +1,7 @@
-﻿declare @search varchar(max);
-set @search = '1234';
-
-select * from sales.tblCustomers
-WHERE customerFirstName like @search + '%' 
-    OR customerLastName like @search + '%' 
-    OR customerEmail like @search + '%' 
-    --OR customerPhone like @search + '%' 
-    OR Cast(customerId as varchar) like @search + '%' 
+﻿
+SELECT * FROM (
+SELECT s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, STRING_AGG(ca.addressId, ':') AS addressIds, STRING_AGG(ca.streetAddress, ':') AS streetAddresses, STRING_AGG(ct1.cityName, ':') AS customerCityNames, STRING_AGG(ca.postalCode, ':') AS postalCodes, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, STRING_AGG(g.genreId, ':') AS genreIds, STRING_AGG(g.genreName, ':') AS genreNames, STRING_AGG(g.genreDescription, ':') AS genreDescriptions, s.saleQuantity
+FROM sales.tblSales AS s INNER JOIN sales.tblCustomers AS cs ON s.customerId = cs.customerId LEFT JOIN sales.tblCustomerAddresses AS ca ON cs.customerId = ca.customerId LEFT JOIN concerts.tblCities AS ct1 ON ca.cityId = ct1.cityId INNER JOIN concerts.tblConcerts AS c ON s.concertId = c.concertId LEFT JOIN concerts.tblConcertGenres AS cg ON c.concertId = cg.concertId LEFT JOIN concerts.tblGenres AS g ON cg.genreId = g.genreId LEFT JOIN concerts.tblLocations AS l ON c.locationId = l.locationId LEFT JOIN concerts.tblCities AS ct2 ON l.cityId = ct2.cityId
+GROUP BY s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, s.saleQuantity
+) AS FullSales
+where customerIsAdmin = 1;

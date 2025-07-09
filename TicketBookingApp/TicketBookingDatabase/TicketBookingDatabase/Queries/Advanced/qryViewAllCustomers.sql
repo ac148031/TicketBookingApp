@@ -1,4 +1,25 @@
-﻿SELECT cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, STRING_AGG(ca.addressId, ':') AS addressIds, STRING_AGG(ca.streetAddress, ':') AS streetAddresses, STRING_AGG(ct.cityName, ':') AS cityNames, STRING_AGG(ca.postalCode, ':') AS postalCodes
-FROM sales.tblCustomers AS cs LEFT OUTER JOIN sales.tblCustomerAddresses AS ca ON cs.customerId = ca.customerId LEFT OUTER JOIN concerts.tblCities AS ct ON ct.cityId = ca.cityId
-GROUP BY cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin
-    --HAVING STRING_AGG(ca.streetAddress, ':') LIKE '%:%';
+﻿SELECT   cs.customerId,
+         cs.customerFirstName,
+         cs.customerLastName,
+         cs.customerPhone,
+         cs.customerEmail,
+         cs.customerUsername,
+         cs.customerIsAdmin,
+         STRING_AGG(ca.addressId, ':') AS addressIds,
+         STRING_AGG(ca.streetAddress, ':') AS streetAddresses,
+         STRING_AGG(ct.cityName, ':') AS cityNames,
+         STRING_AGG(ca.postalCode, ':') AS postalCodes
+FROM     sales.tblCustomers AS cs
+         LEFT OUTER JOIN
+         sales.tblCustomerAddresses AS ca
+         ON cs.customerId = ca.customerId
+         LEFT OUTER JOIN
+         concerts.tblCities AS ct
+         ON ct.cityId = ca.cityId
+GROUP BY cs.customerId, 
+         cs.customerFirstName, 
+         cs.customerLastName, 
+         cs.customerPhone, 
+         cs.customerEmail, 
+         cs.customerUsername, 
+         cs.customerIsAdmin;

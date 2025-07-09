@@ -124,7 +124,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<City>? Cities(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, City? insertCity = null)
+        public List<City>? Cities(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, City? insertCity = null)
         {
             string sqlString;
 
@@ -219,7 +219,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Customer? insertCustomer = null)
+        public List<Customer>? Customers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, Customer? insertCustomer = null)
         {
             string sqlString;
 
@@ -331,7 +331,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<FullCustomer>? FullCustomers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        public List<FullCustomer>? FullCustomers(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null)
         {
             string sqlString;
 
@@ -417,7 +417,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<CustomerAddress>? CustomerAddresses(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, CustomerAddress? insertCustomerAddress = null)
+        public List<CustomerAddress>? CustomerAddresses(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, CustomerAddress? insertCustomerAddress = null)
         {
             string sqlString;
 
@@ -522,7 +522,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<FullCustomerAddress>? FullCustomerAddresses(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        public List<FullCustomerAddress>? FullCustomerAddresses(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null)
         {
             string sqlString;
 
@@ -567,7 +567,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Concert>? Concerts(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Concert? insertConcert = null)
+        public List<Concert>? Concerts(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, Concert? insertConcert = null)
         {
             string sqlString;
 
@@ -679,7 +679,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<FullConcert>? FullConcerts(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        public List<FullConcert>? FullConcerts(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null)
         {
             string sqlString;
 
@@ -753,7 +753,6 @@ namespace TicketBookingApp
                                 }
                             }
 
-
                             concerts.Add(current);
                         }
                     }
@@ -764,7 +763,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<ConcertGenre>? ConcertGenres(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, ConcertGenre? insertConcertGenre = null)
+        public List<ConcertGenre>? ConcertGenres(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, ConcertGenre? insertConcertGenre = null)
         {
             string sqlString;
 
@@ -860,7 +859,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Genre>? Genres(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Genre? insertGenre = null)
+        public List<Genre>? Genres(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, Genre? insertGenre = null)
         {
             string sqlString;
 
@@ -959,7 +958,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Location>? Locations(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Location? insertLocation = null)
+        public List<Location>? Locations(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, Location? insertLocation = null)
         {
             string sqlString;
 
@@ -1062,7 +1061,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<FullLocation>? FullLocations(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null)
+        public List<FullLocation>? FullLocations(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null)
         {
             string sqlString;
 
@@ -1105,7 +1104,7 @@ namespace TicketBookingApp
             }
         }
 
-        public List<Sale>? Sales(SQLAction SQLAction, string whereClause = "", Dictionary<string, object> parameters = null, Sale? insertSale = null)
+        public List<Sale>? Sales(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, Sale? insertSale = null)
         {
             string sqlString;
 
@@ -1201,6 +1200,144 @@ namespace TicketBookingApp
                         cmd.ExecuteNonQuery();
                     }
                     return null;
+
+                default:
+                    throw new Exception("Invalid SQLAction");
+            }
+        }
+
+        public List<FullSale>? FullSales(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null)
+        {
+            switch (SQLAction)
+            {
+                case SQLAction.Select:
+                    List<FullSale> sales = new();
+                    string sqlString = "SELECT * FROM ( " +
+                        "SELECT s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, STRING_AGG(ca.addressId, ':') AS addressIds, STRING_AGG(ca.streetAddress, ':') AS streetAddresses, STRING_AGG(ct1.cityName, ':') AS customerCityNames, STRING_AGG(ca.postalCode, ':') AS postalCodes, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, STRING_AGG(g.genreId, ':') AS genreIds, STRING_AGG(g.genreName, ':') AS genreNames, STRING_AGG(g.genreDescription, ':') AS genreDescriptions, s.saleQuantity " +
+                        "FROM sales.tblSales AS s INNER JOIN sales.tblCustomers AS cs ON s.customerId = cs.customerId LEFT JOIN sales.tblCustomerAddresses AS ca ON cs.customerId = ca.customerId LEFT JOIN concerts.tblCities AS ct1 ON ca.cityId = ct1.cityId INNER JOIN concerts.tblConcerts AS c ON s.concertId = c.concertId LEFT JOIN concerts.tblConcertGenres AS cg ON c.concertId = cg.concertId LEFT JOIN concerts.tblGenres AS g ON cg.genreId = g.genreId LEFT JOIN concerts.tblLocations AS l ON c.locationId = l.locationId LEFT JOIN concerts.tblCities AS ct2 ON l.cityId = ct2.cityId " +
+                        "GROUP BY s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, s.saleQuantity " +
+                        ") AS FullSales " + whereClause + " ;";
+
+                    using (SqlCommand cmd = new(sqlString, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            foreach (var kvp in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        using SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
+                        {
+                            // Get customer from ordinals
+                            int customerId = reader.GetInt32(reader.GetOrdinal("customerId"));
+
+                            FullCustomer customer = new FullCustomer(
+                                customerId,
+                                reader.GetString(reader.GetOrdinal("customerFirstName")),
+                                reader.GetString(reader.GetOrdinal("customerLastName")),
+                                reader.GetString(reader.GetOrdinal("customerPhone")),
+                                reader.GetString(reader.GetOrdinal("customerEmail")),
+                                reader.GetString(reader.GetOrdinal("customerUsername")),
+                                reader.GetString(reader.GetOrdinal("customerPassword")),
+                                reader.GetBoolean(reader.GetOrdinal("customerIsAdmin")));
+
+                            string[] streetAddresses = reader.IsDBNull(reader.GetOrdinal("streetAddresses"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("streetAddresses")).Split(':').Distinct().ToArray();
+
+                            string[] cityNames = reader.IsDBNull(reader.GetOrdinal("cityNames"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("cityNames")).Split(':').Distinct().ToArray();
+
+                            string[] postalCodes = reader.IsDBNull(reader.GetOrdinal("postalCodes"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("postalCodes")).Split(':').Distinct().ToArray();
+
+                            string[] addressIds = reader.IsDBNull(reader.GetOrdinal("addressIds"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("addressIds")).Split(':').Distinct().ToArray();
+
+                            if (streetAddresses.Length != cityNames.Length && streetAddresses.Length != postalCodes.Length)
+                            {
+                                throw new Exception("Mismatching address data");
+                            }
+
+                            List<FullCustomerAddress> addresses = new();
+
+                            for (int i = 0; i < streetAddresses.Length; i++)
+                            {
+                                addresses.Add(new FullCustomerAddress(
+                                    int.Parse(addressIds[i]),
+                                    customerId,
+                                    streetAddresses[i],
+                                    cityNames[i],
+                                    postalCodes[i]
+                                    ));
+                            }
+
+                            customer.CustomerAddresses = addresses;
+
+                            // Get concert from ordinals
+                            FullConcert concert = new FullConcert(
+                                reader.GetInt32(reader.GetOrdinal("concertId")),
+                                reader.GetString(reader.GetOrdinal("concertName")),
+                                reader.GetString(reader.GetOrdinal("concertDescription")),
+                                DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("concertDate"))),
+                                TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("concertTime"))),
+                                reader.GetInt32(reader.GetOrdinal("concertAvailTickets")),
+                                reader.GetDecimal(reader.GetOrdinal("concertTicketPrice")));
+
+                            concert.ConcertLocation = new FullLocation(
+                                reader.GetInt32(reader.GetOrdinal("locationId")),
+                                reader.GetString(reader.GetOrdinal("locationName")),
+                                reader.GetString(reader.GetOrdinal("locationAddress")),
+                                reader.GetString(reader.GetOrdinal("cityName")),
+                                reader.GetInt32(reader.GetOrdinal("locationCapacity"))
+                                );
+
+                            concert.GenreList = new List<Genre>();
+                            string[] genreIds = reader.IsDBNull(reader.GetOrdinal("genreIds"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("genreIds")).Split(':');
+
+                            string[] genreNames = reader.IsDBNull(reader.GetOrdinal("genreNames"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("genreNames")).Split(':');
+
+                            string[] genreDescriptions = reader.IsDBNull(reader.GetOrdinal("genreDescriptions"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("genreDescriptions")).Split(':');
+
+                            if (genreIds?.Length != genreNames?.Length || genreIds?.Length != genreDescriptions?.Length)
+                                throw new Exception("Genre data is missing");
+
+                            if (genreIds != null && genreNames != null && genreDescriptions != null)
+                            {
+                                for (int i = 0; i < genreIds.Length; i++)
+                                {
+                                    concert.GenreList.Add(new Genre(
+                                        int.Parse(genreIds[i]),
+                                        genreNames[i],
+                                        genreDescriptions[i]
+                                        ));
+                                }
+                            }
+
+                            // Get sale data
+                            FullSale current = new FullSale(
+                                reader.GetInt32(reader.GetOrdinal("saleId")),
+                                customer,
+                                concert,
+                                reader.GetInt32(reader.GetOrdinal("saleQuantity")));
+
+                            sales.Add(current);
+                        }
+                    }
+                    return sales;
 
                 default:
                     throw new Exception("Invalid SQLAction");

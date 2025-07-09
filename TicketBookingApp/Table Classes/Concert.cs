@@ -33,15 +33,8 @@ namespace TicketBookingApp.Table_Classes
     public class FullConcert : Concert
     {
         public FullLocation ConcertLocation { get; set; }
-
         public List<Genre> GenreList { get; set; }
-
-        [Obsolete("", true)]
-        public new int LocationId
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
+        [Obsolete("", true)] public new int LocationId { get; set; }
 
         public FullConcert(int concertId, string concertName, string concertDescription, DateOnly concertDate, TimeOnly concertTime, int concertAvailTickets, decimal concertTicketPrice)
             : base(concertId, concertName, concertDescription, concertDate, concertTime, concertAvailTickets, concertTicketPrice, 0)

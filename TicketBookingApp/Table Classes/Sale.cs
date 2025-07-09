@@ -21,4 +21,19 @@ namespace TicketBookingApp.Table_Classes
             SaleQuantity = saleQuantity;
         }
     }
+
+    public class FullSale : Sale
+    {
+        public FullCustomer SaleCustomer { get; set; }
+        public FullConcert SaleConcert { get; set; }
+        [Obsolete("", true)] public new int CustomerId { get; set; }
+        [Obsolete("", true)] public new int ConcertId { get; set; }
+
+        public FullSale(int saleId, FullCustomer fullCustomer, FullConcert fullConcert, int saleQuantity)
+            : base(saleId, 0, 0, saleQuantity)
+        {
+            SaleCustomer = fullCustomer;
+            SaleConcert = fullConcert;
+        }
+    }
 }

@@ -27,13 +27,7 @@ namespace TicketBookingApp.Table_Classes
     public class FullLocation : Location
     {
         public string CityName { get; set; }
-
-        [Obsolete("", true)]
-        public new int CityId
-        {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
-        }
+        [Obsolete("", true)] public new int CityId { get; set; }
 
         public FullLocation(int locationId, string locationName, string locationAddress, string cityName, int locationCapacity)
             : base(locationId, locationName, 0, locationAddress, locationCapacity)
