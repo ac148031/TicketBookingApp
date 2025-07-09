@@ -1,9 +1,6 @@
 ﻿// Get all lines of code
 // gitbash -
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l
-using Microsoft.VisualBasic.FileIO;
-using System;
-using System.ComponentModel.Design;
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l && cd
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -33,7 +30,7 @@ namespace TicketBookingApp
             {
                 if (currentUser == null)
                 {
-                    Username = LoginScreen();
+                    LoginScreen();
 
                     List<Customer>? users = storageManager.Customers(SQLAction.Select,
                                                                $"WHERE customerUsername = @Username",
@@ -72,7 +69,13 @@ namespace TicketBookingApp
                 switch (exitCode)
                 {
                     case 1:
-                        ViewProfileScreen();
+                        int deleted = ViewProfileScreen();
+                        if (deleted == 1)
+                        {
+                            Username = String.Empty;
+                            currentUser = null;
+                            continue;
+                        }
                         break;
 
                     case 2:
@@ -91,19 +94,19 @@ namespace TicketBookingApp
             }
         }
 
-        private static string LoginScreen()
+        private static void LoginScreen()
         {
             bool loggedIn = false;
             int errorCode = 0;
             do
             {
-                (Username, string password) = view.Login(errorCode);
-                if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(password))
+                (string tempUsername, string password) = view.Login(errorCode);
+                if (string.IsNullOrEmpty(tempUsername) || string.IsNullOrEmpty(password))
                 {
                     errorCode = 2;
                     continue;
                 }
-                else if (Username == " " && password == " ")
+                else if (tempUsername == " " && password == " ")
                 {
                     RegisterScreen();
                     errorCode = 0;
@@ -113,10 +116,11 @@ namespace TicketBookingApp
                 {
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
                                                                          $"WHERE customerUsername = @Username",
-                                                                         new() { { "@Username", Username } });
-                    if (customers.All(customer => PWSecurity.Verify(password, customer.CustomerPassword)))
+                                                                         new() { { "@Username", tempUsername } });
+                    if (customers?.Count != 0 && (customers?.All(customer => PWSecurity.Verify(password, customer.CustomerPassword)) ?? false))
                     {
                         errorCode = 0;
+                        Username = tempUsername;
                         loggedIn = true;
                         continue;
                     }
@@ -128,7 +132,6 @@ namespace TicketBookingApp
 
                 }
             } while (!loggedIn);
-            return Username;
         }
 
         private static void RegisterScreen()
@@ -211,7 +214,10 @@ namespace TicketBookingApp
 
             do
             {
-                newCustomer = view.EditUserDetails(errorCode);
+                if (existing.CustomerId != -1)
+                    newCustomer = view.EditUserDetails(errorCode, existing);
+                else
+                    newCustomer = view.EditUserDetails(errorCode);
 
                 if (newCustomer == null) return;
 
@@ -249,6 +255,24 @@ namespace TicketBookingApp
                     errorCode = 2 + emptyProperty;
                     continue;
                 }
+                else if (!int.TryParse(newCustomer.CustomerPhone.Replace(" ", ""), out _)) // accounts for numbers with spaces
+                {
+                    if (!int.TryParse(newCustomer.CustomerPhone.Replace(" ", "")[1..], out _)) // accounts for numbers with + international code (+64)
+                    {
+                        errorCode = 6;
+                        continue;
+                    }
+                }
+                else if (newCustomer.CustomerPhone.Count(char.IsDigit) > 15)
+                {
+                    errorCode = 6;
+                    continue;
+                }
+                else if (!newCustomer.CustomerEmail.Contains('@'))
+                {
+                    errorCode = 7;
+                    continue;
+                }
                 else
                 {
                     edited = true;
@@ -281,7 +305,7 @@ namespace TicketBookingApp
             } while (!edited);
         }
 
-        private static void ViewProfileScreen()
+        private static int ViewProfileScreen()
         {
             if (currentUser == null) throw new Exception("Cannot run method with null customer");
 
@@ -295,7 +319,7 @@ namespace TicketBookingApp
             {
                 int exitCode = view.ViewUserDetails(storageManager, currentUser.CustomerId, menuOptions);
 
-                if (exitCode == 0) return;
+                if (exitCode == 0) return 0;
                 else if (exitCode == 1)
                 {
                     EditProfileScreen(currentUser);
@@ -305,23 +329,23 @@ namespace TicketBookingApp
                 }
                 else if (exitCode == 2)
                 {
-                    //not working
-                    break;
-                    DeleteProfileScreen();
+                    return DeleteConfirmationScreen(currentUser.CustomerId);
                 }
             }
         }
 
-        private static void DeleteProfileScreen()
+        private static int DeleteConfirmationScreen(int userId)
         {
-            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+            Customer user = storageManager.Customers(SQLAction.Select, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", userId } })?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
 
-            while (true)
+            int exitCode = view.DeleteCustomer(user.CustomerUsername);
+
+            if (exitCode == 1)
             {
-                int exitCode = view.DeleteCustomer(storageManager, currentUser.CustomerId);
-
-                //if (exitCode)
+                storageManager.Customers(SQLAction.Delete, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", userId } });
             }
+
+            return exitCode;
         }
 
         private static void ConcertSearchScreen()

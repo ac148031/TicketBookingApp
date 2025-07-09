@@ -243,7 +243,7 @@ namespace TicketBookingApp
             }
         }
 
-        public Customer EditUserDetails(int errorCode)
+        public Customer EditUserDetails(int errorCode, Customer? existing = null)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -276,7 +276,9 @@ namespace TicketBookingApp
                 { 2, "First Name field cannot be empty" },
                 { 3, "Last Name field cannot be empty" },
                 { 4, "Phone field cannot be empty" },
-                { 5, "Email field cannot be empty" }
+                { 5, "Email field cannot be empty" },
+                { 6, "Phone should only contain numbers and country code if applicable" },
+                { 7, "Email must include domain name" }
             };
 
             if (errorCode != 0)
@@ -294,17 +296,12 @@ namespace TicketBookingApp
                 Console.ResetColor();
             }
 
-            StringBuilder firstName = new();
-            StringBuilder lastName = new();
-            StringBuilder phone = new();
-            StringBuilder email = new();
-
             Dictionary<int, StringBuilder> inputFieldsDict = new()
             {
-                { 0, firstName },
-                { 1, lastName },
-                { 2, phone },
-                { 3, email }
+                { 0, new() },   // firstName
+                { 1, new() },  // lastName
+                { 2, new() }, // phone
+                { 3, new() } // email
             };
 
             int inputBoxSelection = 0;
@@ -315,6 +312,20 @@ namespace TicketBookingApp
             ConsoleKeyInfo input;
             Console.CursorVisible = true;
 
+            if (existing != null)
+            {
+                inputFieldsDict[0] = new(existing.CustomerFirstName);
+                inputFieldsDict[1] = new(existing.CustomerLastName);
+                inputFieldsDict[2] = new(existing.CustomerPhone);
+                inputFieldsDict[3] = new(existing.CustomerEmail);
+
+                for (int i = 0; i < inputFieldsDict.Count; i++)
+                {
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + 1 + (2 * i));
+                    Console.Write(inputFieldsDict[i]);
+                }
+            }
+
             while (true)
             {
                 yOffset = inputBoxSelection * 2;
@@ -324,14 +335,21 @@ namespace TicketBookingApp
                 {
                     xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
                     Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
-                    Console.Write(inputFieldsDict[inputBoxSelection].ToString().Substring(inputFieldsDict[inputBoxSelection].Length - 19, 19) + " ");
+                    Console.Write(inputFieldsDict[inputBoxSelection].ToString(inputFieldsDict[inputBoxSelection].Length - 19, 19) + " ");
                 }
 
                 Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
                 input = Console.ReadKey();
 
                 if (inputBoxSelection < 3 && (input.MatchesInput("Enter") || input.MatchesInput("Tab"))) inputBoxSelection++;
-                else if (input.MatchesInput("Enter")) return new(-1, firstName.ToString(), lastName.ToString(), phone.ToString(), email.ToString(), null, null);
+                else if (input.MatchesInput("Enter"))
+                {
+                    return new(-1,
+                        inputFieldsDict[0].ToString(),
+                        inputFieldsDict[1].ToString(),
+                        inputFieldsDict[2].ToString(),
+                        inputFieldsDict[3].ToString(), null, null);
+                }
                 else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
                 else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
                 else if (input.MatchesInput("DownArrow") && inputBoxSelection < 3) inputBoxSelection++;
@@ -545,7 +563,7 @@ namespace TicketBookingApp
             }
         }
 
-        public int DeleteCustomer(StorageManager storageManager, int userId)
+        public int DeleteCustomer(string customerUsername)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -554,8 +572,8 @@ namespace TicketBookingApp
 
             Dictionary<string, int> menuOptions = new()
             {
-                { "No" , 0 },
-                { "Yes" , 1 }
+                { "Yes" , 1 },
+                { "No" , 0 }
             };
 
             string[] boxes = [
@@ -576,6 +594,11 @@ namespace TicketBookingApp
                 Console.SetCursorPosition(startXPos, startYPos + i);
                 Console.Write(boxes[i]);
             }
+
+            string message = $"Are you sure you want to delete {customerUsername}?";
+            int messageXPos = (int)Math.Round((WindowWidth / 2d) - (message.Length / 2d));
+            Console.SetCursorPosition(messageXPos, startYPos - 1);
+            Console.Write(message);
 
             int selectedOption = 0;
             ConsoleKeyInfo input;

@@ -370,10 +370,22 @@ namespace TicketBookingApp
                                 reader.GetString(reader.GetOrdinal("customerPassword")),
                                 reader.GetBoolean(reader.GetOrdinal("customerIsAdmin")));
 
-                            string[] streetAddresses = reader.GetString(reader.GetOrdinal("streetAddresses")).Split(':');
-                            string[] cityNames = reader.GetString(reader.GetOrdinal("cityNames")).Split(':');
-                            string[] postalCodes = reader.GetString(reader.GetOrdinal("postalCodes")).Split(':');
-                            string[] addressIds = reader.GetString(reader.GetOrdinal("addressIds")).Split(':');
+                            string[] streetAddresses = reader.IsDBNull(reader.GetOrdinal("streetAddresses"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("streetAddresses")).Split(':');
+
+                            string[] cityNames = reader.IsDBNull(reader.GetOrdinal("cityNames"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("cityNames")).Split(':');
+
+                            string[] postalCodes = reader.IsDBNull(reader.GetOrdinal("postalCodes"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("postalCodes")).Split(':');
+
+                            string[] addressIds = reader.IsDBNull(reader.GetOrdinal("addressIds"))
+                                ? new string[0]
+                                : reader.GetString(reader.GetOrdinal("addressIds")).Split(':');
+
 
                             if (streetAddresses.Length != cityNames.Length && streetAddresses.Length != postalCodes.Length)
                             {
