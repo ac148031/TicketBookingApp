@@ -456,7 +456,6 @@ namespace TicketBookingApp
                     string columns = "(";
                     bool notNull = false;
 
-                    AddInsertProperties(insertCustomerAddress?.AddressId.ToString(), "addressId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertCustomerAddress?.CustomerId.ToString(), "customerId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertCustomerAddress?.StreetAddress, "streetAddress", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertCustomerAddress?.CityId.ToString(), "cityId", ref values, ref columns, ref notNull);
@@ -497,7 +496,6 @@ namespace TicketBookingApp
                     string setClause = "SET ";
                     notNull = false;
 
-                    AddUpdateProperties(insertCustomerAddress?.AddressId.ToString(), "addressId", ref setClause, ref notNull);
                     AddUpdateProperties(insertCustomerAddress?.CustomerId.ToString(), "customerId", ref setClause, ref notNull);
                     AddUpdateProperties(insertCustomerAddress?.StreetAddress, "streetAddress", ref setClause, ref notNull);
                     AddUpdateProperties(insertCustomerAddress?.CityId.ToString(), "cityId", ref setClause, ref notNull);
@@ -896,7 +894,6 @@ namespace TicketBookingApp
                     string columns = "(";
                     bool notNull = false;
 
-                    AddInsertProperties(insertGenre?.GenreId.ToString(), "genreId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertGenre?.GenreName, "genreName", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertGenre?.GenreDescription, "genreDescription", ref values, ref columns, ref notNull);
 
@@ -935,7 +932,6 @@ namespace TicketBookingApp
                     string setClause = "SET ";
                     notNull = false;
 
-                    AddUpdateProperties(insertGenre?.GenreId.ToString(), "genreId", ref setClause, ref notNull);
                     AddUpdateProperties(insertGenre?.GenreName, "genreName", ref setClause, ref notNull);
                     AddUpdateProperties(insertGenre?.GenreDescription, "genreDescription", ref setClause, ref notNull);
 
@@ -1142,7 +1138,6 @@ namespace TicketBookingApp
                     string columns = "(";
                     bool notNull = false;
 
-                    AddInsertProperties(insertSale?.SaleId.ToString(), "saleId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertSale?.CustomerId.ToString(), "customerId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertSale?.ConcertId.ToString(), "concertId", ref values, ref columns, ref notNull);
                     AddInsertProperties(insertSale?.SaleQuantity.ToString(), "saleQuantity", ref values, ref columns, ref notNull);
@@ -1182,7 +1177,6 @@ namespace TicketBookingApp
                     string setClause = "SET ";
                     notNull = false;
 
-                    AddUpdateProperties(insertSale?.SaleId.ToString(), "saleId", ref setClause, ref notNull);
                     AddUpdateProperties(insertSale?.CustomerId.ToString(), "customerId", ref setClause, ref notNull);
                     AddUpdateProperties(insertSale?.ConcertId.ToString(), "concertId", ref setClause, ref notNull);
                     AddUpdateProperties(insertSale?.SaleQuantity.ToString(), "saleQuantity", ref setClause, ref notNull);

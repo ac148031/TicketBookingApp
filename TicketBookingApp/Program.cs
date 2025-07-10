@@ -1,6 +1,9 @@
 ﻿// Get all lines of code
 // gitbash -
 // cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l && cd
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc -l && cd
+using System.Numerics;
+using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -49,7 +52,7 @@ namespace TicketBookingApp
                     menuOptions = new()
                     {
                         { "View My Profile", 1 },
-                        { "Browse Concerts", 2 },
+                        { "View All Concerts", 2 },
                         { "View All Customers", 4 },
                         { "View All Sales", 5 },
                         { "View All Locations", 6 },
@@ -219,11 +222,11 @@ namespace TicketBookingApp
 
         private static void EditProfileScreen(Customer existing)
         {
-            bool edited = false;
             int errorCode = 0;
             Customer newCustomer;
+            List<CustomerAddress> newAddresses = new();
 
-            do
+            while (true)
             {
                 if (existing.CustomerId != -1)
                     newCustomer = view.EditUserDetails(errorCode, existing);
@@ -266,15 +269,7 @@ namespace TicketBookingApp
                     errorCode = 2 + emptyProperty;
                     continue;
                 }
-                else if (!int.TryParse(newCustomer.CustomerPhone.Replace(" ", ""), out _)) // accounts for numbers with spaces
-                {
-                    if (!int.TryParse(newCustomer.CustomerPhone.Replace(" ", "")[1..], out _)) // accounts for numbers with + international code (+64)
-                    {
-                        errorCode = 6;
-                        continue;
-                    }
-                }
-                else if (newCustomer.CustomerPhone.Count(char.IsDigit) > 15)
+                else if (!Regex.IsMatch(newCustomer.CustomerPhone.Replace(" ", ""), @"^\+?\d{7,15}$"))
                 {
                     errorCode = 6;
                     continue;
@@ -284,36 +279,115 @@ namespace TicketBookingApp
                     errorCode = 7;
                     continue;
                 }
+
+                break;
+            }
+
+            if (existing.CustomerId != -1)
+            {
+                List<CustomerAddress>? existingAddresses = storageManager.CustomerAddresses(SQLAction.Select, "WHERE customerId = @id", new() { { "@id", existing.CustomerId } });
+
+                int repeats = existingAddresses != null ? Math.Max(existingAddresses.Count + 1, 1) : 1;
+                errorCode = 0;
+
+                for (int i = 0; i < repeats; i++)
+                {
+                    CustomerAddress? current;
+                    if (i < existingAddresses?.Count) current = existingAddresses[i];
+                    else current = null;
+
+                    while (true)
+                    {
+                        CustomerAddress? newAddress = view.EditCustomerAddress(errorCode, storageManager, current);
+
+                        if (newAddress == null) return;
+                        if (newAddress.AddressId == -2) break;
+
+                        int emptyValues = 0;
+                        int emptyProperty = -1;
+                        if (string.IsNullOrEmpty(newAddress.StreetAddress))
+                        {
+                            emptyProperty = 0;
+                            emptyValues++;
+                        }
+                        if (newAddress.CityId == -2)
+                        {
+                            emptyProperty = 1;
+                            emptyValues++;
+                        }
+                        if (string.IsNullOrEmpty(newAddress.PostalCode))
+                        {
+                            emptyProperty = 2;
+                            emptyValues++;
+                        }
+
+                        if (emptyValues > 1)
+                        {
+                            errorCode = 1;
+                            continue;
+                        }
+                        else if (emptyValues == 1)
+                        {
+                            errorCode = 2 + emptyProperty;
+                            continue;
+                        }
+                        else if (newAddress.CityId == -1)
+                        {
+                            errorCode = 5;
+                            continue;
+                        }
+                        else if (!Regex.IsMatch(newAddress.PostalCode, @"^\d{4}$"))
+                        {
+                            errorCode = 6;
+                            continue;
+                        }
+
+                        if (current != null) newAddress.AddressId = current.AddressId;
+
+                        newAddresses.Add(newAddress);
+                        break;
+                    }
+                }
+            }
+
+            string message = existing.CustomerId == -1 ? "Registering User" : "Updating User Information";
+
+            Console.Clear();
+            Thread loading = new(() => ConsoleView.LoadingText(message));
+
+            loading.Start();
+
+            int customerId;
+
+            // Insert or update logic
+            if (existing.CustomerId == -1)
+            {
+                newCustomer.CustomerPassword = PWSecurity.Hash(existing.CustomerPassword);
+                newCustomer.CustomerUsername = existing.CustomerUsername;
+
+                storageManager.Customers(SQLAction.Insert, insertCustomer: newCustomer);
+
+                customerId = storageManager.Customers(SQLAction.Select, "WHERE customerUsername = @username", new Dictionary<string, object> { { "@username", existing.CustomerUsername } })?.FirstOrDefault()?.CustomerId ?? throw new Exception("Unable to fetch customer ID");
+            }
+            else
+            {
+                storageManager.Customers(SQLAction.Update, $"WHERE customerId = {existing.CustomerId}", insertCustomer: newCustomer);
+                customerId = existing.CustomerId;
+            }
+
+            for (int i = 0; i < newAddresses.Count; i++)
+            {
+                newAddresses[i].CustomerId = customerId;
+
+                if (newAddresses[i].AddressId == -1)
+                    storageManager.CustomerAddresses(SQLAction.Insert, insertCustomerAddress: newAddresses[i]);
                 else
-                {
-                    edited = true;
-                }
+                    storageManager.CustomerAddresses(SQLAction.Update, $"WHERE addressId = {newAddresses[i].AddressId}", insertCustomerAddress: newAddresses[i]);
+            }
 
-                string message = existing.CustomerId == -1 ? "Registering User" : "Updating User Information";
+            Thread.Sleep(500);
 
-                Console.Clear();
-                Thread loading = new(() => ConsoleView.LoadingText(message));
-
-                loading.Start();
-
-                // Insert or update logic
-                if (existing.CustomerId == -1)
-                {
-                    newCustomer.CustomerPassword = PWSecurity.Hash(existing.CustomerPassword);
-                    newCustomer.CustomerUsername = existing.CustomerUsername;
-
-                    storageManager.Customers(SQLAction.Insert, insertCustomer: newCustomer);
-                }
-                else
-                {
-                    storageManager.Customers(SQLAction.Update, $"WHERE customerId = {existing.CustomerId}", insertCustomer: newCustomer);
-                }
-
-                Thread.Sleep(500);
-
-                loading.Interrupt();
-
-            } while (!edited);
+            loading.Interrupt();
         }
 
         private static int ViewProfileScreen()
@@ -340,20 +414,28 @@ namespace TicketBookingApp
                 }
                 else if (exitCode == 2)
                 {
-                    return DeleteUserConfirmationScreen(currentUser.CustomerId);
+                    return DeleteConfirmationScreen<Customer>(currentUser.CustomerId);
                 }
             }
         }
 
-        private static int DeleteUserConfirmationScreen(int userId)
+        private static int DeleteConfirmationScreen<T>(int id)
         {
-            Customer user = storageManager.Customers(SQLAction.Select, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", userId } })?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
+            int exitCode = 0;
 
-            int exitCode = view.DeleteCustomer(user.CustomerUsername);
+            if (typeof(T) == typeof(Customer))
+            {
+                Customer user = storageManager.Customers(SQLAction.Select, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", id } })?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
+                exitCode = view.DeleteCustomer(user.CustomerUsername);
+            }
+            //else if ()
+            //{
+
+            //}
 
             if (exitCode == 1)
             {
-                storageManager.Customers(SQLAction.Delete, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", userId } });
+                storageManager.Customers(SQLAction.Delete, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", id } });
             }
 
             return exitCode;

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -444,6 +445,248 @@ namespace TicketBookingApp
 
                     // Only accepts char if is a-Z, a symbol or punctuation, but not space.
                     if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c))
+                    {
+                        inputFieldsDict[inputBoxSelection].Append(c);
+                    }
+                }
+            }
+        }
+
+        public CustomerAddress? EditCustomerAddress(int errorCode, StorageManager storageManager, CustomerAddress? existing = null)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Edit Addresses");
+            if (existing == null) DrawFooter(["Back - Ctrl + B", "Skip - Ctrl + X"]);
+            else DrawFooter(["Back - Ctrl + B"]);
+
+            string[] inputFields = [
+            "          ┌────────────────────┐",
+            "  Address │                    │",
+            "          ├────────────────────┤",
+            "     City │                    │",
+            "          ├────────────────────┤",
+            "Post Code │                    │",  // 0
+            "          └────────────────────┘"]; // 1
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d));
+
+            for (int i = 0; i < inputFields.Length; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(inputFields[i]);
+            }
+
+            // NEEDS FILLING OUT
+            Dictionary<int, string> errorMessages = new()
+            {
+                { 1, "Fields cannot be empty" },
+                { 2, "Address field cannot be empty" },
+                { 3, "City field cannot be empty" },
+                { 4, "Post Code field cannot be empty" },
+                { 5, "Selected City is not in list" },
+                { 6, "Postal Code must be four digits" }
+            };
+
+            if (errorCode != 0)
+            {
+                string[] errorMessage = errorMessages[errorCode].Split('\n');
+                int longestLine = errorMessage.Max(line => line.Length);
+                int errorXPos = (int)Math.Round((WindowWidth / 2d) - (longestLine / 2d));
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                for (int i = 0; i < errorMessage.Length; i++)
+                {
+                    Console.SetCursorPosition(errorXPos, startYPos + inputFields.Length + 1 + i);
+                    Console.Write(errorMessage[i]);
+                }
+                Console.ResetColor();
+            }
+
+            Dictionary<int, StringBuilder> inputFieldsDict = new()
+            {
+                { 0, new() },   // Address
+                { 1, new() },  // City
+                { 2, new() }, // Post Code
+            };
+
+
+            Dictionary<int, string> cities = storageManager.Cities(SQLAction.Select)?.ToDictionary(c => c.CityId, c => c.CityName) ?? new();
+            List<string> cityNames = cities.Values.ToList();
+
+            int inputBoxSelection = 0;
+            int yOffset = 0;
+            int xOffset = 0;
+            int xBoxOffset = inputFields[0].IndexOf('─');
+
+            if (existing != null)
+            {
+                inputFieldsDict[0] = new(existing.StreetAddress);
+                inputFieldsDict[1] = new(cities[existing.CityId]);
+                inputFieldsDict[2] = new(existing.PostalCode);
+
+                for (int i = 0; i < inputFieldsDict.Count; i++)
+                {
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + 1 + (2 * i));
+                    Console.Write(inputFieldsDict[i]);
+                }
+            }
+
+            ConsoleKeyInfo input;
+            Console.CursorVisible = true;
+            bool droppedDown = false;
+
+            while (true)
+            {
+                List<string> dropdownBox = new();
+
+                if (inputBoxSelection == 1)
+                {
+                    var dropdown = cityNames.Where(c => c.StartsWith(inputFieldsDict[1].ToString(), StringComparison.OrdinalIgnoreCase)).Take(3).Distinct().ToList();
+                    int longestDropdown = dropdown.Any() ? dropdown.Max(c => c.Length) : 0;
+
+                    if (longestDropdown != 0)
+                    {
+                        int fieldWidth = inputFields[0].Count(c => c == '─');
+                        bool bigger = longestDropdown > fieldWidth;
+                        bool same = longestDropdown == fieldWidth;
+
+
+                        if (bigger) dropdownBox.Add("├v" + new string('─', fieldWidth - 1) + "┴" + new string('─', longestDropdown - fieldWidth - 1) + "┐");
+                        else if (same) dropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┤");
+                        else dropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┬" + new string('─', fieldWidth - longestDropdown - 1) + "┤");
+
+                        for (int i = 0; i < dropdown.Count; i++)
+                        {
+                            if (bigger || same)
+                                dropdownBox.Add("│" + dropdown[i].PadRight(longestDropdown) + "│");
+                            else
+                            {
+                                string addon = "│";
+                                int extra = fieldWidth - longestDropdown;
+
+                                if (i == 0 && inputFieldsDict[2].Length > longestDropdown)
+                                {
+                                    if (inputFieldsDict[2].Length >= fieldWidth)
+                                    {
+                                        addon += inputFieldsDict[2].ToString(inputFieldsDict[2].Length - extra + 2, extra - 2).PadRight(extra - 1) + "│";
+                                    }
+                                    else
+                                    {
+                                        addon += inputFieldsDict[2].ToString(fieldWidth - extra + 1, extra - (fieldWidth - inputFieldsDict[2].Length) - 1).PadRight(extra - 1) + "│";
+                                    }
+                                }
+                                else if (i == 1)
+                                {
+                                    addon = "├" + new string('─', extra - 1) + "┘";
+                                }
+                                else if (i == 0)
+                                {
+                                    addon += new string(' ', extra - 1) + "│";
+                                }
+                                else
+                                {
+                                    addon += new string(' ', extra - 1);
+                                }
+
+                                dropdownBox.Add("│" + dropdown[i].PadRight(longestDropdown) + addon);
+                            }
+                        }
+
+                        if (bigger || same) dropdownBox.Add("└" + new string('─', longestDropdown) + "┘");
+                        else if (dropdownBox.Count == 2) dropdownBox.Add("└" + new string('─', longestDropdown) + "┴" + new string('─', fieldWidth - longestDropdown - 1) + "┘");
+                        else dropdownBox.Add("└" + new string('─', longestDropdown) + "┘");
+                    }
+
+                    droppedDown = true;
+                }
+
+                if (droppedDown)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset - 1, startYPos + 4 + i);
+
+                        if (i < dropdownBox.Count)
+                        {
+                            Console.Write(dropdownBox[i].PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                        else
+                        {
+                            string line = "";
+
+                            if (i == 0) line = inputFields[4].Substring(xBoxOffset - 1);
+                            else if (i == 1 && inputFieldsDict[2].Length < 19) line = "│" + inputFieldsDict[2].ToString().PadRight(20) + "│";
+                            else if (i == 1 && inputFieldsDict[2].Length >= 19) line = "│" + inputFieldsDict[2].ToString(inputFieldsDict[2].Length - 19, 19) + " │";
+                            else if (i == 2) line = inputFields[6].Substring(xBoxOffset - 1);
+
+                            Console.Write(line.PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                    }
+
+                    if (dropdownBox.Count == 0) droppedDown = false;
+                }
+
+                yOffset = inputBoxSelection * 2;
+
+                if (inputFieldsDict[inputBoxSelection].Length < 19) xOffset = inputFieldsDict[inputBoxSelection].Length;
+                else
+                {
+                    xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                    Console.Write(inputFieldsDict[inputBoxSelection].ToString(inputFieldsDict[inputBoxSelection].Length - 19, 19) + " ");
+                }
+
+                Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
+                Console.CursorVisible = true;
+                input = Console.ReadKey();
+                Console.CursorVisible = false;
+
+                if (inputBoxSelection < inputFieldsDict.Count - 1 && (input.MatchesInput("Enter") || input.MatchesInput("Tab"))) inputBoxSelection++;
+                else if (input.MatchesInput("Enter"))
+                {
+                    int cityId;
+
+                    if (cityNames.Contains(inputFieldsDict[1].ToString(), StringComparer.OrdinalIgnoreCase))
+                    {
+                        cityId = cities.FirstOrDefault(c => c.Value.Equals(inputFieldsDict[1].ToString(), StringComparison.OrdinalIgnoreCase)).Key;
+                    }
+                    else if (string.IsNullOrEmpty(inputFieldsDict[2].ToString())) cityId = -2;
+                    else cityId = -1;
+
+                    CustomerAddress output = new(
+                        -1, -1,
+                        inputFieldsDict[0].ToString(),
+                        cityId,
+                        inputFieldsDict[2].ToString());
+
+                    return output;
+                }
+                else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
+                else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.MatchesInput("DownArrow") && inputBoxSelection < inputFieldsDict.Count - 1) inputBoxSelection++;
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
+                else if (input.MatchesInput(["B", "Control"])) return null;
+                else if (input.MatchesInput(["X", "Control"]) && existing == null)
+                {
+                    return new(-2, -1, "", -1, "");
+                }
+                else if (input.MatchesInput("Backspace"))
+                {
+                    if (inputFieldsDict[inputBoxSelection].Length > 0) inputFieldsDict[inputBoxSelection].Length--;
+                    if (inputFieldsDict[inputBoxSelection].Length < 19)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                        Console.Write(inputFieldsDict[inputBoxSelection].ToString().Substring(0, inputFieldsDict[inputBoxSelection].Length) + " ");
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    // Only accepts char if is a-Z, 0-9, a symbol or punctuation or space.
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c) || c == ' ')
                     {
                         inputFieldsDict[inputBoxSelection].Append(c);
                     }
