@@ -40,6 +40,7 @@ namespace TicketBookingApp.Table_Classes
             : base(concertId, concertName, concertDescription, concertDate, concertTime, concertAvailTickets, concertTicketPrice, 0)
         {
             ConcertLocation = null;
+            GenreList = new List<Genre>();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Data.SqlClient;
-using System.Collections.Generic;
 using System.Data;
 using TicketBookingApp.Table_Classes;
 
@@ -1213,9 +1212,9 @@ namespace TicketBookingApp
                 case SQLAction.Select:
                     List<FullSale> sales = new();
                     string sqlString = "SELECT * FROM ( " +
-                        "SELECT s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, STRING_AGG(ca.addressId, ':') AS addressIds, STRING_AGG(ca.streetAddress, ':') AS streetAddresses, STRING_AGG(ct1.cityName, ':') AS customerCityNames, STRING_AGG(ca.postalCode, ':') AS postalCodes, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, STRING_AGG(g.genreId, ':') AS genreIds, STRING_AGG(g.genreName, ':') AS genreNames, STRING_AGG(g.genreDescription, ':') AS genreDescriptions, s.saleQuantity " +
+                        "SELECT s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerPassword, cs.customerIsAdmin, STRING_AGG(ca.addressId, ':') AS addressIds, STRING_AGG(ca.streetAddress, ':') AS streetAddresses, STRING_AGG(ct1.cityName, ':') AS customerCityNames, STRING_AGG(ca.postalCode, ':') AS postalCodes, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, STRING_AGG(g.genreId, ':') AS genreIds, STRING_AGG(g.genreName, ':') AS genreNames, STRING_AGG(g.genreDescription, ':') AS genreDescriptions, s.saleQuantity " +
                         "FROM sales.tblSales AS s INNER JOIN sales.tblCustomers AS cs ON s.customerId = cs.customerId LEFT JOIN sales.tblCustomerAddresses AS ca ON cs.customerId = ca.customerId LEFT JOIN concerts.tblCities AS ct1 ON ca.cityId = ct1.cityId INNER JOIN concerts.tblConcerts AS c ON s.concertId = c.concertId LEFT JOIN concerts.tblConcertGenres AS cg ON c.concertId = cg.concertId LEFT JOIN concerts.tblGenres AS g ON cg.genreId = g.genreId LEFT JOIN concerts.tblLocations AS l ON c.locationId = l.locationId LEFT JOIN concerts.tblCities AS ct2 ON l.cityId = ct2.cityId " +
-                        "GROUP BY s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerIsAdmin, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, s.saleQuantity " +
+                        "GROUP BY s.saleId, cs.customerId, cs.customerFirstName, cs.customerLastName, cs.customerPhone, cs.customerEmail, cs.customerUsername, cs.customerPassword, cs.customerIsAdmin, c.concertId, c.concertName, c.concertDescription, c.concertDate, c.concertTime, c.concertAvailTickets, c.concertTicketPrice, l.locationId, l.locationName, l.locationAddress, l.locationCapacity, ct2.cityId, ct2.cityName, s.saleQuantity " +
                         ") AS FullSales " + whereClause + " ;";
 
                     using (SqlCommand cmd = new(sqlString, connection))
@@ -1249,9 +1248,9 @@ namespace TicketBookingApp
                                 ? new string[0]
                                 : reader.GetString(reader.GetOrdinal("streetAddresses")).Split(':').Distinct().ToArray();
 
-                            string[] cityNames = reader.IsDBNull(reader.GetOrdinal("cityNames"))
+                            string[] cityNames = reader.IsDBNull(reader.GetOrdinal("customerCityNames"))
                                 ? new string[0]
-                                : reader.GetString(reader.GetOrdinal("cityNames")).Split(':').Distinct().ToArray();
+                                : reader.GetString(reader.GetOrdinal("customerCityNames")).Split(':').Distinct().ToArray();
 
                             string[] postalCodes = reader.IsDBNull(reader.GetOrdinal("postalCodes"))
                                 ? new string[0]

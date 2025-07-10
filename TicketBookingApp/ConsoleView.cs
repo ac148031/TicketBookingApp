@@ -1637,7 +1637,6 @@ namespace TicketBookingApp
             }
         }
 
-
         // Sub Methods
 
         public List<string> LineWrap(string line, string label, int size)

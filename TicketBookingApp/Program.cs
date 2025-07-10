@@ -62,6 +62,7 @@ namespace TicketBookingApp
                     {
                         { "View My Profile", 1 },
                         { "Browse Concerts", 2 },
+                        { "View All Locations", 6 },
                         { "Log Out", 3 }
                     };
                 }
@@ -98,7 +99,7 @@ namespace TicketBookingApp
                         break;
 
                     case 6:
-                        LocationsSearchScreen()
+                        LocationsSearchScreen();
                         break;
                 }
             }
