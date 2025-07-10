@@ -21,7 +21,7 @@ namespace TicketBookingApp
             System.Environment.Exit(0);
         }
 
-        static void Main(string[] args)
+        static void Main()
         {
             //storageManager.Setup();
             //Exit();
@@ -51,6 +51,7 @@ namespace TicketBookingApp
                         { "View My Profile", 1 },
                         { "Browse Concerts", 2 },
                         { "View All Customers", 4 },
+                        { "View All Sales", 5 },
                         { "Log Out", 3 }
                     };
                 }
@@ -89,6 +90,10 @@ namespace TicketBookingApp
 
                     case 4:
                         CustomerSearchScreen();
+                        break;
+
+                    case 5:
+
                         break;
                 }
             }
