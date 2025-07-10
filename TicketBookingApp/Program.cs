@@ -52,6 +52,7 @@ namespace TicketBookingApp
                         { "Browse Concerts", 2 },
                         { "View All Customers", 4 },
                         { "View All Sales", 5 },
+                        { "View All Locations", 6 },
                         { "Log Out", 3 }
                     };
                 }
@@ -93,7 +94,11 @@ namespace TicketBookingApp
                         break;
 
                     case 5:
+                        SalesSearchScreen();
+                        break;
 
+                    case 6:
+                        LocationsSearchScreen()
                         break;
                 }
             }
@@ -334,12 +339,12 @@ namespace TicketBookingApp
                 }
                 else if (exitCode == 2)
                 {
-                    return DeleteConfirmationScreen(currentUser.CustomerId);
+                    return DeleteUserConfirmationScreen(currentUser.CustomerId);
                 }
             }
         }
 
-        private static int DeleteConfirmationScreen(int userId)
+        private static int DeleteUserConfirmationScreen(int userId)
         {
             Customer user = storageManager.Customers(SQLAction.Select, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", userId } })?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
 
@@ -424,6 +429,38 @@ namespace TicketBookingApp
 
                 view.ViewUserDetails(storageManager, userId, menuOptions);
             }
+        }
+
+        private static void LocationsSearchScreen()
+        {
+            int userId = 0;
+            string initSearch = "";
+            string initPage = "0 0";
+
+            Dictionary<string, int> menuOptions = new()
+            {
+                { "", 1 },
+                { "", 2 }
+            };
+
+            while (true)
+            {
+                Location? idSearchPage = view.LocationSearch(storageManager, initSearch, initPage);
+
+                if (idSearchPage == null) return;
+
+                userId = idSearchPage.LocationId;
+                initSearch = idSearchPage.LocationName;
+                initPage = idSearchPage.LocationAddress;
+
+                // View location details
+                //view.ViewUserDetails(storageManager, userId, menuOptions);
+            }
+        }
+
+        private static void SalesSearchScreen()
+        {
+            view.SalesSearch(storageManager);
         }
     }
 }
