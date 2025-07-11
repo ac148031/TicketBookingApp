@@ -233,9 +233,9 @@ namespace TicketBookingApp
             while (true)
             {
                 if (existing.CustomerId != -1)
-                    newCustomer = view.EditUserDetails(errorCode, existing);
+                    newCustomer = view.EditCustomerDetails(errorCode, existing);
                 else
-                    newCustomer = view.EditUserDetails(errorCode);
+                    newCustomer = view.EditCustomerDetails(errorCode);
 
                 if (newCustomer == null) return;
 
@@ -406,7 +406,7 @@ namespace TicketBookingApp
 
             while (true)
             {
-                int exitCode = view.ViewUserDetails(currentUser.CustomerId, menuOptions);
+                int exitCode = view.ViewCustomerDetails(currentUser.CustomerId, menuOptions);
 
                 if (exitCode == 0) return 0;
                 else if (exitCode == 1)
@@ -724,7 +724,7 @@ namespace TicketBookingApp
                 initSearch = idSearchPage.CustomerFirstName;
                 initPage = idSearchPage.CustomerLastName;
 
-                view.ViewUserDetails(userId, menuOptions);
+                view.ViewCustomerDetails(userId, menuOptions);
             }
         }
 
@@ -751,7 +751,7 @@ namespace TicketBookingApp
                 initPage = idSearchPage.LocationAddress;
 
                 // View location details
-                //view.ViewUserDetails(storageManager, userId, menuOptions);
+                // view.ViewLocationDetails(storageManager, userId, menuOptions);
             }
         }
 
