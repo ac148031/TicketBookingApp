@@ -2,7 +2,6 @@
 // gitbash -
 // cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc && cd
 // cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc && cd
-using System.Numerics;
 using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
 
@@ -13,8 +12,8 @@ namespace TicketBookingApp
         private static string Username = string.Empty;
         private static Customer? currentUser = null;
 
-        private static string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
-        private static StorageManager storageManager = new(connectionString);
+        private static readonly string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
+        private static readonly StorageManager storageManager = new(connectionString);
         private static readonly ConsoleView view = new(storageManager);
 
         public static void Exit()
@@ -425,17 +424,79 @@ namespace TicketBookingApp
 
             if (typeof(T) == typeof(Customer))
             {
-                Customer user = storageManager.Customers(SQLAction.Select, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", id } })?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
-                exitCode = view.DeleteCustomer(user.CustomerUsername);
+                Customer user = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {id}")?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
+                exitCode = view.DeleteConfirmation(user.CustomerUsername);
             }
-            //else if ()
-            //{
-
-            //}
+            else if (typeof(T) == typeof(Concert))
+            {
+                Concert concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("Concert Id returned Null");
+                exitCode = view.DeleteConfirmation(concert.ConcertName);
+            }
+            else if (typeof(T) == typeof(City))
+            {
+                City city = storageManager.Cities(SQLAction.Select, $"WHERE cityId = {id}")?.FirstOrDefault() ?? throw new Exception("City Id returned Null");
+                exitCode = view.DeleteConfirmation(city.CityName);
+            }
+            else if (typeof(T) == typeof(Location))
+            {
+                Location location = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {id}")?.FirstOrDefault() ?? throw new Exception("Location Id returned Null");
+                exitCode = view.DeleteConfirmation(location.LocationName);
+            }
+            else if (typeof(T) == typeof(CustomerAddress))
+            {
+                CustomerAddress address = storageManager.CustomerAddresses(SQLAction.Select, $"WHERE addressId = {id}")?.FirstOrDefault() ?? throw new Exception("Address Id returned Null");
+                exitCode = view.DeleteConfirmation($"{address.StreetAddress}");
+            }
+            else if (typeof(T) == typeof(Sale))
+            {
+                Sale sale = storageManager.Sales(SQLAction.Select, $"WHERE saleId = {id}")?.FirstOrDefault() ?? throw new Exception("Sale Id returned Null");
+                exitCode = view.DeleteConfirmation($"{sale.SaleId}");
+            }
+            else if (typeof(T) == typeof(ConcertGenre))
+            {
+                ConcertGenre concertGenre = storageManager.ConcertGenres(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("ConcertGenre Id returned Null");
+                exitCode = view.DeleteConfirmation($"{concertGenre.ConcertId}-{concertGenre.GenreId}");
+            }
+            else if (typeof(T) == typeof(Genre))
+            {
+                Genre genre = storageManager.Genres(SQLAction.Select, $"WHERE genreId = {id}")?.FirstOrDefault() ?? throw new Exception("Genre Id returned Null");
+                exitCode = view.DeleteConfirmation(genre.GenreName);
+            }
 
             if (exitCode == 1)
             {
-                storageManager.Customers(SQLAction.Delete, "WHERE customerId = @id", new Dictionary<string, object> { { "@id", id } });
+                if (typeof(T) == typeof(Customer))
+                {
+                    storageManager.Customers(SQLAction.Delete, $"WHERE customerId = {id}");
+                }
+                else if (typeof(T) == typeof(Concert))
+                {
+                    storageManager.Concerts(SQLAction.Delete, $"WHERE concertId = {id}");
+                }
+                else if (typeof(T) == typeof(City))
+                {
+                    storageManager.Cities(SQLAction.Delete, $"WHERE cityId = {id}");
+                }
+                else if (typeof(T) == typeof(Location))
+                {
+                    storageManager.Locations(SQLAction.Delete, $"WHERE locationId = {id}");
+                }
+                else if (typeof(T) == typeof(CustomerAddress))
+                {
+                    storageManager.CustomerAddresses(SQLAction.Delete, $"WHERE addressId = {id}");
+                }
+                else if (typeof(T) == typeof(Sale))
+                {
+                    storageManager.Sales(SQLAction.Delete, $"WHERE saleId = {id}");
+                }
+                else if (typeof(T) == typeof(ConcertGenre))
+                {
+                    storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {id}");
+                }
+                else if (typeof(T) == typeof(Genre))
+                {
+                    storageManager.Genres(SQLAction.Delete, $"WHERE genreId = {id}");
+                }
             }
 
             return exitCode;
@@ -483,7 +544,7 @@ namespace TicketBookingApp
                     if (exitCode == 0) break;
                     else if (exitCode == 1) BuyTicketScreen(concertId);
                     else if (exitCode == 2) ;
-                    else if (exitCode == 3) ;
+                    else if (exitCode == 3) DeleteConfirmationScreen<Concert>(concertId);
                 }
             }
         }
