@@ -634,22 +634,22 @@ namespace TicketBookingApp
 
                 int errors = additionConcert.ConcertId;
 
-                if (errors == -1 && errors == -3)
+                if ((errors - 1) % 2 == 0)
                 {
                     errorCode = 2;
                     continue;
                 }
-                else if (errors == -2)
+                else if ((errors - 2) % 4 == 0)
                 {
                     errorCode = 3;
                     continue;
                 }
-                else if (errors <= -4 && errors >= -7)
+                else if ((errors - 4) % 8 == 0)
                 {
                     errorCode = 4;
                     continue;
                 }
-                else if (errors <= -8)
+                else if ((errors - 8) % 16 == 0)
                 {
                     errorCode = 5;
                     continue;
