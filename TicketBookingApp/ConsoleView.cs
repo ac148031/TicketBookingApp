@@ -8,6 +8,12 @@ namespace TicketBookingApp
     {
         private readonly int WindowWidth = Console.WindowWidth;
         private readonly int WindowHeight = Console.WindowHeight;
+        public readonly StorageManager storageManager;
+
+        public ConsoleView(StorageManager sm)
+        {
+            storageManager = sm;
+        }
 
         public (string, string) Login(int errorCode)
         {
@@ -452,7 +458,7 @@ namespace TicketBookingApp
             }
         }
 
-        public CustomerAddress? EditCustomerAddress(int errorCode, StorageManager storageManager, CustomerAddress? existing = null)
+        public CustomerAddress? EditCustomerAddress(int errorCode, CustomerAddress? existing = null)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -478,7 +484,6 @@ namespace TicketBookingApp
                 Console.Write(inputFields[i]);
             }
 
-            // NEEDS FILLING OUT
             Dictionary<int, string> errorMessages = new()
             {
                 { 1, "Fields cannot be empty" },
@@ -498,7 +503,7 @@ namespace TicketBookingApp
                 Console.ForegroundColor = ConsoleColor.Red;
                 for (int i = 0; i < errorMessage.Length; i++)
                 {
-                    Console.SetCursorPosition(errorXPos, startYPos + inputFields.Length + 1 + i);
+                    Console.SetCursorPosition(errorXPos, startYPos - (errorMessage.Length + 1) + i);
                     Console.Write(errorMessage[i]);
                 }
                 Console.ResetColor();
@@ -510,7 +515,6 @@ namespace TicketBookingApp
                 { 1, new() },  // City
                 { 2, new() }, // Post Code
             };
-
 
             Dictionary<int, string> cities = storageManager.Cities(SQLAction.Select)?.ToDictionary(c => c.CityId, c => c.CityName) ?? new();
             List<string> cityNames = cities.Values.ToList();
@@ -694,7 +698,7 @@ namespace TicketBookingApp
             }
         }
 
-        public int ViewUserDetails(StorageManager storageManager, int userId, Dictionary<string, int> menuOptions)
+        public int ViewUserDetails(int userId, Dictionary<string, int> menuOptions)
         {
             Dictionary<string, object> parameters = new() { { "@id", userId } };
             FullCustomer? user = storageManager.FullCustomers(SQLAction.Select, "WHERE cs.customerId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
@@ -876,11 +880,9 @@ namespace TicketBookingApp
                     return menuOptions[menuOptionKeys[selectedOption]];
                 }
             }
-
-            return 0;
         }
 
-        public Customer? CustomerSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
+        public Customer? CustomerSearch(string initSearch = "", string initPage = "0 0")
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -1108,7 +1110,7 @@ namespace TicketBookingApp
             }
         }
 
-        public int ViewConcertDetails(StorageManager storageManager, int concertId, Dictionary<string, int> menuOptions)
+        public int ViewConcertDetails(int concertId, Dictionary<string, int> menuOptions)
         {
             Dictionary<string, object> parameters = new() { { "@id", concertId } };
             FullConcert? concert = storageManager.FullConcerts(SQLAction.Select, "WHERE concertId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for userId");
@@ -1177,14 +1179,6 @@ namespace TicketBookingApp
                 }
             }
 
-            //for (int i = 0; i < WindowHeight; i++)
-            //{
-            //    Console.SetCursorPosition(halfSize + 2, i);
-            //    Console.Write('|');
-            //    Console.SetCursorPosition(WindowWidth - (halfSize + 2), i);
-            //    Console.Write('|');
-            //}
-
             int selectedOption = 0;
             ConsoleKeyInfo input;
 
@@ -1225,7 +1219,7 @@ namespace TicketBookingApp
             }
         }
 
-        public Concert? ConcertSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
+        public Concert? ConcertSearch(string initSearch = "", string initPage = "0 0")
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -1446,7 +1440,7 @@ namespace TicketBookingApp
             }
         }
 
-        public void SalesSearch(StorageManager storageManager)
+        public void SalesSearch()
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -1666,7 +1660,128 @@ namespace TicketBookingApp
             }
         }
 
-        public Location? LocationSearch(StorageManager storageManager, string initSearch = "", string initPage = "0 0")
+        public int CreateSale(int concertId, string customerUsername)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Purchase Ticket");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            FullConcert concert = storageManager.FullConcerts(SQLAction.Select, $"WHERE concertId = {concertId}")?.FirstOrDefault() ?? throw new Exception("Unable to fetch concert from ID");
+
+            int halfSize = (int)Math.Floor((WindowWidth - 3) / 2d);
+
+            string dateTime = new DateTime(concert.ConcertDate, concert.ConcertTime).ToString("f");
+            List<string> saleDetails = [
+                .. LineWrap(concert.ConcertName, "Concert: ", halfSize),
+                .. LineWrap(customerUsername, "User: ", halfSize),
+                .. LineWrap(concert.ConcertLocation.LocationName, "Venue Name: ", halfSize),
+                .. LineWrap(dateTime, "Date and Time: ", halfSize),
+                .. LineWrap(concert.ConcertTicketPrice.ToString("C"), "Ticket Price: ", halfSize)
+            ];
+
+            int detailXPos = halfSize - saleDetails.Max(s => s.Length);
+            int detailYPos = (int)Math.Round((WindowHeight / 2d) - (saleDetails.Count / 2d));
+
+            for (int i = 0; i < saleDetails.Count; i++)
+            {
+                string detail = saleDetails[i];
+                Console.SetCursorPosition(detailXPos, detailYPos + i);
+                Console.Write(detail);
+            }
+
+            string[] menuOptions = ["Confirm Purchase", "Cancel Purchase"];
+
+            string[] boxes = [
+                "  Amount of tickets (1-4)  ",
+                "┌─────────────────────────┐",
+                "│                         │",
+                "└─────────────────────────┘",
+                "┌─────────────────────────┐",
+                "│                         │",
+                "├─────────────────────────┤",
+                "│                         │",
+                "└─────────────────────────┘"
+                ];
+
+            int boxXPos = (int)Math.Round(WindowWidth - halfSize + (boxes[0].Length / 2d));
+            int boxYPos = (int)Math.Round((WindowHeight / 2d) - (boxes.Length / 2d));
+
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                Console.SetCursorPosition(boxXPos, boxYPos + i);
+                Console.Write(boxes[i]);
+            }
+
+            int selectedOption = 0;
+            ConsoleKeyInfo input;
+            int fieldWidth = boxes[0].Length - 2;
+            StringBuilder ticketAmount = new("1");
+
+            while (true)
+            {
+                for (int i = 0; i < menuOptions.Length + 1; i++)
+                {
+                    if (selectedOption == 1 && i == 1 && ticketAmount.Length == 0) Console.ForegroundColor = ConsoleColor.DarkRed;
+                    else if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                    else Console.ForegroundColor = ConsoleColor.DarkGray;
+
+                    if (i == 0)
+                    {
+                        Console.SetCursorPosition(boxXPos + 1, boxYPos + 2);
+                        Console.Write(ticketAmount.ToString() + " ");
+                    }
+                    else if (i > 0)
+                    {
+                        int xPos = boxXPos + 1 + fieldWidth - (int)Math.Round((fieldWidth / 2d) + (menuOptions[i - 1].Length / 2d));
+                        Console.SetCursorPosition(xPos, boxYPos + ((i - 1) * 2) + 5);
+                        Console.Write(menuOptions[i - 1]);
+                    }
+
+                    Console.ResetColor();
+                }
+
+                if (selectedOption == 0)
+                {
+                    Console.SetCursorPosition(boxXPos + 1 + ticketAmount.Length, boxYPos + 2);
+                    Console.CursorVisible = true;
+                }
+
+                input = Console.ReadKey(true);
+                Console.CursorVisible = false;
+                List<string> numKeys = ["NumPad1", "NumPad2", "NumPad3", "NumPad4", "D1", "D2", "D3", "D4"];
+
+                if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptions.Length) selectedOption++;
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
+                else if (input.MatchesInput("Tab"))
+                {
+                    if (selectedOption == menuOptions.Length) selectedOption = 0;
+                    else selectedOption++;
+                }
+                else if (selectedOption == 0 && numKeys.Any(n => input.MatchesInput(n)))
+                {
+                    if (input.Key >= ConsoleKey.D1 && input.Key <= ConsoleKey.D4)
+                    {
+                        ticketAmount = new((input.Key - ConsoleKey.D0).ToString());
+                    }
+                    else if (input.Key >= ConsoleKey.NumPad1 && input.Key <= ConsoleKey.NumPad4)
+                    {
+                        ticketAmount = new((input.Key - ConsoleKey.NumPad0).ToString());
+                    }
+                }
+                else if (selectedOption == 0 && input.MatchesInput("Backspace")) ticketAmount.Length--;
+                else if (input.MatchesInput("Enter") && selectedOption == 0) selectedOption++;
+                else if (input.MatchesInput("Enter") && selectedOption == 1)
+                {
+                    if (int.TryParse(ticketAmount.ToString(), out int output)) return output;
+                    else selectedOption = 0;
+                }
+                else if (input.MatchesInput("Enter") && selectedOption == 2) return 0;
+            }
+        }
+
+        public Location? LocationSearch(string initSearch = "", string initPage = "0 0")
         {
             Console.Clear();
             Console.CursorVisible = false;

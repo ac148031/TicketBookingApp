@@ -1,7 +1,7 @@
 ﻿// Get all lines of code
 // gitbash -
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc -l && cd
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc -l && cd
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc && cd
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc && cd
 using System.Numerics;
 using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
@@ -15,7 +15,7 @@ namespace TicketBookingApp
 
         private static string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
         private static StorageManager storageManager = new(connectionString);
-        private static readonly ConsoleView view = new();
+        private static readonly ConsoleView view = new(storageManager);
 
         public static void Exit()
         {
@@ -298,7 +298,7 @@ namespace TicketBookingApp
 
                     while (true)
                     {
-                        CustomerAddress? newAddress = view.EditCustomerAddress(errorCode, storageManager, current);
+                        CustomerAddress? newAddress = view.EditCustomerAddress(errorCode, current);
 
                         if (newAddress == null) return;
                         if (newAddress.AddressId == -2) break;
@@ -402,7 +402,7 @@ namespace TicketBookingApp
 
             while (true)
             {
-                int exitCode = view.ViewUserDetails(storageManager, currentUser.CustomerId, menuOptions);
+                int exitCode = view.ViewUserDetails(currentUser.CustomerId, menuOptions);
 
                 if (exitCode == 0) return 0;
                 else if (exitCode == 1)
@@ -450,7 +450,7 @@ namespace TicketBookingApp
             string initPage = "0 0";
             while (true)
             {
-                Concert? idSearchPage = view.ConcertSearch(storageManager, initSearch, initPage);
+                Concert? idSearchPage = view.ConcertSearch(initSearch, initPage);
 
                 if (idSearchPage == null) return;
 
@@ -478,10 +478,10 @@ namespace TicketBookingApp
 
                 while (true)
                 {
-                    int exitCode = view.ViewConcertDetails(storageManager, concertId, menuOptions);
+                    int exitCode = view.ViewConcertDetails(concertId, menuOptions);
 
                     if (exitCode == 0) break;
-                    else if (exitCode == 1) ;
+                    else if (exitCode == 1) BuyTicketScreen(concertId);
                     else if (exitCode == 2) ;
                     else if (exitCode == 3) ;
                 }
@@ -502,7 +502,7 @@ namespace TicketBookingApp
 
             while (true)
             {
-                Customer? idSearchPage = view.CustomerSearch(storageManager, initSearch, initPage);
+                Customer? idSearchPage = view.CustomerSearch(initSearch, initPage);
 
                 if (idSearchPage == null) return;
 
@@ -510,7 +510,7 @@ namespace TicketBookingApp
                 initSearch = idSearchPage.CustomerFirstName;
                 initPage = idSearchPage.CustomerLastName;
 
-                view.ViewUserDetails(storageManager, userId, menuOptions);
+                view.ViewUserDetails(userId, menuOptions);
             }
         }
 
@@ -528,7 +528,7 @@ namespace TicketBookingApp
 
             while (true)
             {
-                Location? idSearchPage = view.LocationSearch(storageManager, initSearch, initPage);
+                Location? idSearchPage = view.LocationSearch(initSearch, initPage);
 
                 if (idSearchPage == null) return;
 
@@ -543,7 +543,20 @@ namespace TicketBookingApp
 
         private static void SalesSearchScreen()
         {
-            view.SalesSearch(storageManager);
+            view.SalesSearch();
+        }
+
+        private static void BuyTicketScreen(int concertId)
+        {
+            if (currentUser == null) throw new Exception("Cannot run this method with null customer");
+
+            int ticketAmount = view.CreateSale(concertId, currentUser.CustomerUsername);
+
+            if (ticketAmount == 0) return;
+
+            Sale insert = new(-1, currentUser.CustomerId, concertId, ticketAmount);
+
+            storageManager.Sales(SQLAction.Insert, insertSale: insert);
         }
     }
 }
