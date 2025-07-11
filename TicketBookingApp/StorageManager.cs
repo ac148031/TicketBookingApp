@@ -593,9 +593,9 @@ namespace TicketBookingApp
                                 reader.GetString(reader.GetOrdinal("concertName")),
                                 reader.GetString(reader.GetOrdinal("concertDescription")),
                                 DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("concertDate"))),
-                                TimeOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("concertTime"))),
+                                TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("concertTime"))),
                                 reader.GetInt32(reader.GetOrdinal("concertAvailTickets")),
-                                reader.GetInt32(reader.GetOrdinal("concertTicketPrice")),
+                                reader.GetDecimal(reader.GetOrdinal("concertTicketPrice")),
                                 reader.GetInt32(reader.GetOrdinal("locationId"))));
                         }
                     }

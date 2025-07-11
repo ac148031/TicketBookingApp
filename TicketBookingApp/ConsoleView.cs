@@ -473,8 +473,8 @@ namespace TicketBookingApp
             "          ├────────────────────┤",
             "     City │                    │",
             "          ├────────────────────┤",
-            "Post Code │                    │",  // 0
-            "          └────────────────────┘"]; // 1
+            "Post Code │                    │",
+            "          └────────────────────┘"];
 
             int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
             int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d));
@@ -512,9 +512,9 @@ namespace TicketBookingApp
 
             Dictionary<int, StringBuilder> inputFieldsDict = new()
             {
-                { 0, new() },   // Address
-                { 1, new() },  // City
-                { 2, new() }, // Post Code
+                { 0, new() },  // Address
+                { 1, new() }, // City
+                { 2, new() } // Post Code
             };
 
             Dictionary<int, string> cities = storageManager.Cities(SQLAction.Select)?.ToDictionary(c => c.CityId, c => c.CityName) ?? new();
@@ -1487,7 +1487,7 @@ namespace TicketBookingApp
             string columnHeadings = "Id".PadRight(columnSizes[0] + 1) +
                                     "Venue Name".PadRight(columnSizes[1] + 1) +
                                     "Address".PadRight(columnSizes[2] + 1) +
-                                    "Capacity".PadRight(columnSizes[3] + 1);
+                                    "Seats".PadRight(columnSizes[3] + 1);
 
             Console.SetCursorPosition(1, 6);
             Console.BackgroundColor = ConsoleColor.DarkCyan;
@@ -1653,6 +1653,514 @@ namespace TicketBookingApp
                         selectedLine = 0;
                     }
                 }
+            }
+        }
+
+        public (Concert, List<Genre>)? EditConcertDetailsPage1(int errorCode, Concert? existing = null)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            if (existing == null) DrawHeader("Create Concert Page 1");
+            else DrawHeader("Edit Concert Page 1");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            string[] inputFields = [
+            "            ┌────────────────────┐",
+            "       Name │                    │",
+            "            ├────────────────────┤",
+            "Description │                    │",
+            "            ├────────────────────┤",
+            "      Venue │                    │",
+            "            ├────────────────────┤",
+            "     Genres │                    │",
+            "            └────────────────────┘"];
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d));
+
+            for (int i = 0; i < inputFields.Length; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(inputFields[i]);
+            }
+
+            Dictionary<int, string> errorMessages = new()
+            {
+                { 1, "Fields cannot be empty" },
+                { 2, "Name field cannot be empty" },
+                { 3, "Description field cannot be empty" },
+                { 4, "Venue field cannot be empty" },
+                { 5, "Genres field cannot be empty" },
+                { 6, "Venue does not match any venues in database" },
+                { 7, "All genres do not match genres in the database, must be comma separated" },
+            };
+
+            if (errorCode != 0)
+            {
+                string[] errorMessage = errorMessages[errorCode].Split('\n');
+                int longestLine = errorMessage.Max(line => line.Length);
+                int errorXPos = (int)Math.Round((WindowWidth / 2d) - (longestLine / 2d));
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                for (int i = 0; i < errorMessage.Length; i++)
+                {
+                    Console.SetCursorPosition(errorXPos, startYPos - (errorMessage.Length + 1) + i);
+                    Console.Write(errorMessage[i]);
+                }
+                Console.ResetColor();
+            }
+
+            Dictionary<int, StringBuilder> inputFieldsDict = new()
+            {
+                { 0, new() },   // Name
+                { 1, new() },  // Description
+                { 2, new() }, // Venue
+                { 3, new() } // Genres
+            };
+
+            Dictionary<int, Location> locations = storageManager.Locations(SQLAction.Select)?.ToDictionary(l => l.LocationId) ?? new();
+            List<string> locationNames = locations.Values.Select(l => l.LocationName).ToList();
+            Dictionary<int, Genre> genres = storageManager.Genres(SQLAction.Select)?.ToDictionary(g => g.GenreId) ?? new();
+            List<string> genreNames = genres.Values.Select(g => g.GenreName).ToList();
+
+            int inputBoxSelection = 0;
+            int yOffset = 0;
+            int xOffset = 0;
+            int xBoxOffset = inputFields[0].IndexOf('─');
+
+            if (existing != null)
+            {
+                inputFieldsDict[0] = new(existing.ConcertName);
+                inputFieldsDict[1] = new(existing.ConcertDescription);
+                inputFieldsDict[2] = new(locations[existing.LocationId].LocationName);
+                List<Genre> existingGenreList = storageManager.FullConcerts(SQLAction.Select, $"WHERE concertId = {existing.ConcertId}")?.FirstOrDefault()?.GenreList ?? throw new Exception("Invalid concert Id");
+                inputFieldsDict[3] = new(string.Join(", ", existingGenreList.Select(g => g.GenreName)));
+
+                for (int i = 0; i < inputFieldsDict.Count; i++)
+                {
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + 1 + (2 * i));
+
+                    if (inputFieldsDict[i].Length < 19)
+                    {
+                        Console.Write(inputFieldsDict[i]);
+                    }
+                    else
+                    {
+                        Console.Write(inputFieldsDict[i].ToString(inputFieldsDict[i].Length - 19, 19) + " ");
+                    }
+                }
+            }
+
+            ConsoleKeyInfo input;
+            Console.CursorVisible = true;
+            bool locationsDroppedDown = false;
+            bool genresDroppedDown = false;
+            int previousInputBoxSelection = inputBoxSelection;
+
+            while (true)
+            {
+                List<string> locationsDropdownBox = new();
+                List<string> genresDropdownBox = new();
+
+                if (inputBoxSelection == 3)
+                {
+                    var dropdown = genreNames.Where(g => g.StartsWith(inputFieldsDict[3].ToString().Split(",").Last().Trim(), StringComparison.OrdinalIgnoreCase)).Take(3).Distinct().ToList();
+                    int longestDropdown = dropdown.Any() ? dropdown.Max(c => c.Length) : 0;
+
+                    if (longestDropdown != 0)
+                    {
+                        int fieldWidth = inputFields[0].Count(c => c == '─');
+                        bool bigger = longestDropdown > fieldWidth;
+                        bool same = longestDropdown == fieldWidth;
+
+                        if (bigger) genresDropdownBox.Add("├v" + new string('─', fieldWidth - 1) + "┴" + new string('─', longestDropdown - fieldWidth - 1) + "┐");
+                        else if (same) genresDropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┘");
+                        else genresDropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┬" + new string('─', fieldWidth - longestDropdown - 1) + "┘");
+
+                        for (int i = 0; i < dropdown.Count; i++)
+                        {
+                            genresDropdownBox.Add("│" + dropdown[i].PadRight(longestDropdown) + "│");
+                        }
+
+                        genresDropdownBox.Add("└" + new string('─', longestDropdown) + "┘");
+                    }
+
+                    genresDroppedDown = true;
+                }
+
+                if (genresDroppedDown)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset - 1, startYPos + 8 + i);
+
+                        if (i < genresDropdownBox.Count)
+                        {
+                            Console.Write(genresDropdownBox[i].PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                        else
+                        {
+                            string line = "";
+
+                            if (i == 0) line = inputFields[8].Substring(xBoxOffset - 1);
+
+                            Console.Write(line.PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                    }
+
+                    if (genresDropdownBox.Count == 0) genresDroppedDown = false;
+                }
+
+                if (inputBoxSelection == 2)
+                {
+                    var dropdown = locationNames.Where(l => l.StartsWith(inputFieldsDict[2].ToString(), StringComparison.OrdinalIgnoreCase)).Take(3).Distinct().ToList();
+                    int longestDropdown = dropdown.Any() ? dropdown.Max(c => c.Length) : 0;
+
+                    if (longestDropdown != 0)
+                    {
+                        int fieldWidth = inputFields[0].Count(c => c == '─');
+                        bool bigger = longestDropdown > fieldWidth;
+                        bool same = longestDropdown == fieldWidth;
+
+                        if (bigger) locationsDropdownBox.Add("├v" + new string('─', fieldWidth - 1) + "┴" + new string('─', longestDropdown - fieldWidth - 1) + "┐");
+                        else if (same) locationsDropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┤");
+                        else locationsDropdownBox.Add("├v" + new string('─', longestDropdown - 1) + "┬" + new string('─', fieldWidth - longestDropdown - 1) + "┤");
+
+                        for (int i = 0; i < dropdown.Count; i++)
+                        {
+                            if (bigger || same)
+                                locationsDropdownBox.Add("│" + dropdown[i].PadRight(longestDropdown) + "│");
+                            else
+                            {
+                                string addon = "│";
+                                int extra = fieldWidth - longestDropdown;
+
+                                if (i == 0 && inputFieldsDict[3].Length > longestDropdown)
+                                {
+                                    if (inputFieldsDict[3].Length >= fieldWidth)
+                                    {
+                                        addon += inputFieldsDict[3].ToString(inputFieldsDict[3].Length - extra + 2, extra - 2).PadRight(extra - 1) + "│";
+                                    }
+                                    else
+                                    {
+                                        addon += inputFieldsDict[3].ToString(fieldWidth - extra + 1, extra - (fieldWidth - inputFieldsDict[3].Length) - 1).PadRight(extra - 1) + "│";
+                                    }
+                                }
+                                else if (i == 1)
+                                {
+                                    addon = "├" + new string('─', extra - 1) + "┘";
+                                }
+                                else if (i == 0)
+                                {
+                                    addon += new string(' ', extra - 1) + "│";
+                                }
+                                else
+                                {
+                                    addon += new string(' ', extra - 1);
+                                }
+
+                                locationsDropdownBox.Add("│" + dropdown[i].PadRight(longestDropdown) + addon);
+                            }
+                        }
+
+                        if (bigger || same) locationsDropdownBox.Add("└" + new string('─', longestDropdown) + "┘");
+                        else if (locationsDropdownBox.Count == 2) locationsDropdownBox.Add("└" + new string('─', longestDropdown) + "┴" + new string('─', fieldWidth - longestDropdown - 1) + "┘");
+                        else locationsDropdownBox.Add("└" + new string('─', longestDropdown) + "┘");
+                    }
+
+                    locationsDroppedDown = true;
+                }
+
+                if (locationsDroppedDown)
+                {
+                    int upperLimit = 5;
+
+                    if (genresDroppedDown && locationsDroppedDown)
+                        upperLimit = 2;
+
+                    for (int i = 0; i < upperLimit; i++)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset - 1, startYPos + 6 + i);
+
+                        if (i < locationsDropdownBox.Count)
+                        {
+                            Console.Write(locationsDropdownBox[i].PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                        else
+                        {
+                            string line = "";
+
+                            if (i == 0) line = inputFields[6].Substring(xBoxOffset - 1);
+                            else if (i == 1 && inputFieldsDict[3].Length < 19) line = "│" + inputFieldsDict[3].ToString().PadRight(20) + "│";
+                            else if (i == 1 && inputFieldsDict[3].Length >= 19) line = "│" + inputFieldsDict[3].ToString(inputFieldsDict[3].Length - 19, 19) + " │";
+                            else if (i == 2) line = inputFields[8].Substring(xBoxOffset - 1);
+
+                            Console.Write(line.PadRight(WindowWidth - (startXPos + xBoxOffset - 1)));
+                        }
+                    }
+
+                    if (locationsDropdownBox.Count == 0) locationsDroppedDown = false;
+                }
+
+                yOffset = inputBoxSelection * 2;
+
+                if (inputFieldsDict[inputBoxSelection].Length < 19) xOffset = inputFieldsDict[inputBoxSelection].Length;
+                else
+                {
+                    xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                    Console.Write(inputFieldsDict[inputBoxSelection].ToString(inputFieldsDict[inputBoxSelection].Length - 19, 19) + " ");
+                }
+
+                Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
+                Console.CursorVisible = true;
+                input = Console.ReadKey();
+                Console.CursorVisible = false;
+
+                if (inputBoxSelection < inputFieldsDict.Count - 1 && (input.MatchesInput("Enter") || input.MatchesInput("Tab"))) inputBoxSelection++;
+                else if (input.MatchesInput("Enter"))
+                {
+                    int genreErrors = 0;
+                    List<Genre> outputGenres = new();
+                    Location? outputLocation = new(0, "", 0, "", 0);
+
+                    if (inputFieldsDict[3].ToString()
+                        .Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                        .All(g => genreNames.Contains(g, StringComparer.OrdinalIgnoreCase)))
+                    {
+                        // ! makes sure there is no null warning
+                        outputGenres = inputFieldsDict[3].ToString()
+                            .Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                            .Select(g => genres.Values
+                                        .FirstOrDefault(g2 => g2.GenreName.Equals(g, StringComparison.OrdinalIgnoreCase))!)
+                            .ToList();
+                    }
+                    else if (string.IsNullOrEmpty(inputFieldsDict[3].ToString())) genreErrors = -2;
+                    else genreErrors = -1;
+
+                    if (locationNames.Contains(inputFieldsDict[2].ToString(), StringComparer.OrdinalIgnoreCase))
+                    {
+                        outputLocation = locations.Values.FirstOrDefault(l => l.LocationName.Equals(inputFieldsDict[2].ToString(), StringComparison.OrdinalIgnoreCase));
+                    }
+                    else if (string.IsNullOrEmpty(inputFieldsDict[2].ToString())) outputLocation.LocationId = -2;
+                    else outputLocation.LocationId = -1;
+
+                    Concert output = new Concert(
+                        genreErrors,
+                        inputFieldsDict[0].ToString(),
+                        inputFieldsDict[1].ToString(),
+                        new(),
+                        new(),
+                        -1,
+                        -1m,
+                        outputLocation.LocationId
+                        );
+
+                    return (output, outputGenres);
+                }
+                else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
+                else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.MatchesInput("DownArrow") && inputBoxSelection < inputFieldsDict.Count - 1) inputBoxSelection++;
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
+                else if (input.MatchesInput(["B", "Control"])) return null;
+                else if (input.MatchesInput("Backspace"))
+                {
+                    if (inputFieldsDict[inputBoxSelection].Length > 0) inputFieldsDict[inputBoxSelection].Length--;
+                    if (inputFieldsDict[inputBoxSelection].Length < 19)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                        Console.Write(inputFieldsDict[inputBoxSelection].ToString().Substring(0, inputFieldsDict[inputBoxSelection].Length) + " ");
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    // Only accepts char if is a-Z, 0-9, a symbol or punctuation or space.
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c) || c == ' ')
+                    {
+                        inputFieldsDict[inputBoxSelection].Append(c);
+                    }
+                }
+
+            }
+        }
+
+        public Concert? EditConcertDetailsPage2(int errorCode, Concert? existing = null)
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            if (existing == null) DrawHeader("Create Concert Page 2");
+            else DrawHeader("Edit Concert Page 2");
+            DrawFooter(["Back - Ctrl + B"]);
+
+            string[] inputFields = [
+            "            ┌────────────────────┐",
+            "       Date │                    │",
+            "            ├────────────────────┤",
+            "       Time │                    │",
+            "            ├────────────────────┤",
+            "Max Tickets │                    │",
+            "            ├────────────────────┤",
+            "      Price │                    │",
+            "            └────────────────────┘"];
+
+            int startXPos = (int)Math.Round((WindowWidth / 2d) - (inputFields[0].Length / 2d));
+            int startYPos = (int)Math.Round((WindowHeight / 2d) - (inputFields.Length / 2d));
+
+            for (int i = 0; i < inputFields.Length; i++)
+            {
+                Console.SetCursorPosition(startXPos, startYPos + i);
+                Console.Write(inputFields[i]);
+            }
+
+            Dictionary<int, string> errorMessages = new()
+            {
+                { 1, "Fields cannot be empty" },
+                { 2, "Date field cannot be empty and must be in format DD/MM/YYYY" },
+                { 3, "Time field cannot be empty and must be in format HH:MM (24 Hour Time)" },
+                { 4, "Max Tickets field cannot be empty and must be a number" },
+                { 5, "Price field cannot be empty and number be a price" },
+                { 6, "Price must be in format $XX.XX" }
+            };
+
+            if (errorCode != 0)
+            {
+                string[] errorMessage = errorMessages[errorCode].Split('\n');
+                int longestLine = errorMessage.Max(line => line.Length);
+                int errorXPos = (int)Math.Round((WindowWidth / 2d) - (longestLine / 2d));
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                for (int i = 0; i < errorMessage.Length; i++)
+                {
+                    Console.SetCursorPosition(errorXPos, startYPos - (errorMessage.Length + 1) + i);
+                    Console.Write(errorMessage[i]);
+                }
+                Console.ResetColor();
+            }
+
+            Dictionary<int, StringBuilder> inputFieldsDict = new()
+            {
+                { 0, new() },   // Date
+                { 1, new() },  // Time
+                { 2, new() }, // Max
+                { 3, new() } // Price
+            };
+
+            int inputBoxSelection = 0;
+            int yOffset = 0;
+            int xOffset = 0;
+            int xBoxOffset = inputFields[0].IndexOf('─');
+
+            if (existing != null)
+            {
+                inputFieldsDict[0] = new(existing.ConcertDate.ToString("g"));
+                inputFieldsDict[1] = new(existing.ConcertTime.ToString("g"));
+                inputFieldsDict[2] = new(existing.ConcertAvailTickets.ToString());
+                inputFieldsDict[3] = new(existing.ConcertTicketPrice.ToString("F2"));
+
+                for (int i = 0; i < inputFieldsDict.Count; i++)
+                {
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + 1 + (2 * i));
+
+                    if (inputFieldsDict[i].Length < 19)
+                    {
+                        Console.Write(inputFieldsDict[i]);
+                    }
+                    else
+                    {
+                        Console.Write(inputFieldsDict[i].ToString(inputFieldsDict[i].Length - 19, 19) + " ");
+                    }
+                }
+            }
+
+            ConsoleKeyInfo input;
+            Console.CursorVisible = true;
+
+            while (true)
+            {
+                yOffset = inputBoxSelection * 2;
+
+                if (inputFieldsDict[inputBoxSelection].Length < 19) xOffset = inputFieldsDict[inputBoxSelection].Length;
+                else
+                {
+                    xOffset = 19; // Make sure cursor does not exceed length of box, and move the current text left to simulate scroll.
+                    Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                    Console.Write(inputFieldsDict[inputBoxSelection].ToString(inputFieldsDict[inputBoxSelection].Length - 19, 19) + " ");
+                }
+
+                Console.SetCursorPosition(startXPos + xOffset + xBoxOffset, startYPos + yOffset + 1);
+                Console.CursorVisible = true;
+                input = Console.ReadKey();
+                Console.CursorVisible = false;
+
+                if (inputBoxSelection < inputFieldsDict.Count - 1 && (input.MatchesInput("Enter") || input.MatchesInput("Tab"))) inputBoxSelection++;
+                else if (input.MatchesInput("Enter"))
+                {
+                    DateOnly date = new();
+                    TimeOnly time = new();
+                    int availTickets = -1;
+                    decimal price = -1m;
+
+                    int outputError = 0;
+                    string[] dateFormats = ["dd/MM/yyyy", "d/MM/yyyy", "dd/M/yyyy", "d/M/yyyy"];
+                    string[] timeFormats = ["h:mm tt", "hh:mm tt", "H:mm", "HH:mm"];
+
+                    if (!DateOnly.TryParseExact(inputFieldsDict[0].ToString(), dateFormats, out date))
+                    {
+                        outputError -= 1;
+                    }
+                    if (!TimeOnly.TryParseExact(inputFieldsDict[1].ToString(), timeFormats, out time))
+                    {
+                        outputError -= 2;
+                    }
+                    if (!int.TryParse(inputFieldsDict[2].ToString(), out availTickets))
+                    {
+                        outputError -= 4;
+                    }
+                    if (!decimal.TryParse(inputFieldsDict[3].ToString(), out price))
+                    {
+                        outputError -= 8;
+                    }
+
+                    Concert output = new Concert(
+                        outputError,
+                        "",
+                        "",
+                        date,
+                        time,
+                        availTickets,
+                        price,
+                        -1
+                        );
+
+                    return output;
+                }
+                else if (input.MatchesInput("Tab")) inputBoxSelection = 0;
+                else if (input.MatchesInput("UpArrow") && inputBoxSelection > 0) inputBoxSelection--;
+                else if (input.MatchesInput("DownArrow") && inputBoxSelection < inputFieldsDict.Count - 1) inputBoxSelection++;
+                else if (input.MatchesInput(["E", "Control"])) Program.Exit();
+                else if (input.MatchesInput(["B", "Control"])) return null;
+                else if (input.MatchesInput("Backspace"))
+                {
+                    if (inputFieldsDict[inputBoxSelection].Length > 0) inputFieldsDict[inputBoxSelection].Length--;
+                    if (inputFieldsDict[inputBoxSelection].Length < 19)
+                    {
+                        Console.SetCursorPosition(startXPos + xBoxOffset, startYPos + yOffset + 1);
+                        Console.Write(inputFieldsDict[inputBoxSelection].ToString().Substring(0, inputFieldsDict[inputBoxSelection].Length) + " ");
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    // Only accepts char if is a-Z, 0-9, a symbol or punctuation or space.
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c) || c == ' ')
+                    {
+                        inputFieldsDict[inputBoxSelection].Append(c);
+                    }
+                }
+
             }
         }
 
@@ -1987,7 +2495,7 @@ namespace TicketBookingApp
                         ticketAmount = new((input.Key - ConsoleKey.NumPad0).ToString());
                     }
                 }
-                else if (selectedOption == 0 && input.MatchesInput("Backspace")) ticketAmount.Length--;
+                else if (selectedOption == 0 && input.MatchesInput("Backspace") && ticketAmount.Length > 0) ticketAmount.Length--;
                 else if (input.MatchesInput("Enter") && selectedOption == 0) selectedOption++;
                 else if (input.MatchesInput("Enter") && selectedOption == 1)
                 {

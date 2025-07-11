@@ -52,6 +52,7 @@ namespace TicketBookingApp
                     {
                         { "View My Profile", 1 },
                         { "View All Concerts", 2 },
+                        { "Create Concert", 7 },
                         { "View All Customers", 4 },
                         { "View All Sales", 5 },
                         { "View All Locations", 6 },
@@ -102,6 +103,10 @@ namespace TicketBookingApp
 
                     case 6:
                         LocationsSearchScreen();
+                        break;
+
+                    case 7:
+                        EditConcertScreen();
                         break;
                 }
             }
@@ -543,10 +548,158 @@ namespace TicketBookingApp
 
                     if (exitCode == 0) break;
                     else if (exitCode == 1) BuyTicketScreen(concertId);
-                    else if (exitCode == 2) ;
-                    else if (exitCode == 3) DeleteConfirmationScreen<Concert>(concertId);
+                    else if (exitCode == 2) EditConcertScreen(concertId);
+                    else if (exitCode == 3)
+                    {
+                        int deleted = DeleteConfirmationScreen<Concert>(concertId);
+                        if (deleted == 1) return;
+                    }
                 }
             }
+        }
+
+        private static void EditConcertScreen(int? concertId = null)
+        {
+            Concert? concert = null;
+            if (concertId != null) concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {concertId}")?.FirstOrDefault() ?? throw new Exception("ConcertId returned null");
+
+            int errorCode = 0;
+            List<Genre> newGenres = new();
+            Concert newConcert;
+
+            while (true)
+            {
+                var tuple = view.EditConcertDetailsPage1(errorCode, concert);
+                if (tuple == null) return;
+
+                newConcert = tuple.Value.Item1;
+                newGenres = tuple.Value.Item2;
+
+                int genreErrors = newConcert.ConcertId;
+                int locationErrors = newConcert.LocationId;
+
+                int emptyValues = 0;
+                int emptyProperty = -1;
+                if (string.IsNullOrEmpty(newConcert.ConcertName))
+                {
+                    emptyProperty = 0;
+                    emptyValues++;
+                }
+                if (string.IsNullOrEmpty(newConcert.ConcertDescription))
+                {
+                    emptyProperty = 1;
+                    emptyValues++;
+                }
+                if (genreErrors == -2)
+                {
+                    emptyProperty = 2;
+                    emptyValues++;
+                }
+                if (locationErrors == -2)
+                {
+                    emptyProperty = 3;
+                    emptyValues++;
+                }
+
+                if (emptyValues > 1)
+                {
+                    errorCode = 1;
+                    continue;
+                }
+                else if (emptyValues == 1)
+                {
+                    errorCode = 2 + emptyProperty;
+                    continue;
+                }
+                else if (locationErrors == -1)
+                {
+                    errorCode = 6;
+                    continue;
+                }
+                else if (genreErrors == -1)
+                {
+                    errorCode = 7;
+                    continue;
+                }
+
+                break;
+            }
+
+            errorCode = 0;
+            while (true)
+            {
+                Concert? additionConcert = view.EditConcertDetailsPage2(errorCode, concert);
+
+                if (additionConcert == null) return;
+
+                int errors = additionConcert.ConcertId;
+
+                if (errors == -1 && errors == -3)
+                {
+                    errorCode = 2;
+                    continue;
+                }
+                else if (errors == -2)
+                {
+                    errorCode = 3;
+                    continue;
+                }
+                else if (errors <= -4 && errors >= -7)
+                {
+                    errorCode = 4;
+                    continue;
+                }
+                else if (errors <= -8)
+                {
+                    errorCode = 5;
+                    continue;
+                }
+                else if (additionConcert.ConcertTicketPrice.ToString().Split('.')[1].Length != 2)
+                {
+                    errorCode = 6;
+                    continue;
+                }
+
+                newConcert.ConcertDate = additionConcert.ConcertDate;
+                newConcert.ConcertTime = additionConcert.ConcertTime;
+                newConcert.ConcertAvailTickets = additionConcert.ConcertAvailTickets;
+                newConcert.ConcertTicketPrice = additionConcert.ConcertTicketPrice;
+                break;
+            }
+
+            string message = concertId == -1 ? "Registering User" : "Updating User Information";
+
+            Console.Clear();
+            Thread loading = new(() => ConsoleView.LoadingText(message));
+
+            loading.Start();
+
+            if (concertId == null)
+            {
+                storageManager.Concerts(SQLAction.Insert, insertConcert: newConcert);
+
+                concertId = storageManager.Concerts(SQLAction.Select, $"WHERE concertName = @name " +
+                    $"AND concertDescription = @descr", new Dictionary<string, object>() { {"@name", newConcert.ConcertName },
+                        { "@descr", newConcert.ConcertDescription} })?.OrderByDescending(c => c.ConcertId)?.FirstOrDefault()?.ConcertId ?? throw new Exception("concertId not found");
+            }
+            else
+            {
+                storageManager.Concerts(SQLAction.Update, $"WHERE concertId = {concertId}", insertConcert: newConcert);
+            }
+
+            int newId = concertId ?? throw new Exception("concertId was null");
+
+            List<ConcertGenre> newConcertGenres = newGenres.Select(g => g.ToConcertGenre(newId)).ToList();
+
+            storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {newId}");
+            for (int i = 0; i < newConcertGenres.Count; i++)
+            {
+                storageManager.ConcertGenres(SQLAction.Insert, insertConcertGenre: newConcertGenres[i]);
+            }
+
+            Thread.Sleep(500);
+
+            loading.Interrupt();
         }
 
         private static void CustomerSearchScreen()
@@ -581,11 +734,11 @@ namespace TicketBookingApp
             string initSearch = "";
             string initPage = "0 0";
 
-            Dictionary<string, int> menuOptions = new()
-            {
-                { "", 1 },
-                { "", 2 }
-            };
+            //Dictionary<string, int> menuOptions = new()
+            //{
+            //    { "", 1 },
+            //    { "", 2 }
+            //};
 
             while (true)
             {
