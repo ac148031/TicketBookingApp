@@ -51,6 +51,7 @@ namespace TicketBookingApp
                     menuOptions = new()
                     {
                         { "View My Profile", 1 },
+                        { "View My Tickets", 9 },
                         { "View All Concerts", 2 },
                         { "Create Concert", 7 },
                         { "View All Customers", 4 },
@@ -65,6 +66,7 @@ namespace TicketBookingApp
                     menuOptions = new()
                     {
                         { "View My Profile", 1 },
+                        { "View My Tickets", 9 },
                         { "Browse Concerts", 2 },
                         { "View All Locations", 6 },
                         { "Log Out", 3 }
@@ -76,7 +78,7 @@ namespace TicketBookingApp
                 switch (exitCode)
                 {
                     case 1:
-                        int deleted = ViewProfileScreen();
+                        int deleted = ViewProfileScreen(currentUser.CustomerId);
                         if (deleted == 1)
                         {
                             Username = String.Empty;
@@ -112,6 +114,10 @@ namespace TicketBookingApp
 
                     case 8:
                         CitySearchScreen();
+                        break;
+
+                    case 9:
+                        CustomerTicketsScreen();
                         break;
                 }
             }
@@ -484,46 +490,63 @@ namespace TicketBookingApp
             loading.Interrupt();
         }
 
-        private static int ViewProfileScreen()
+        private static int ViewProfileScreen(int customerId = -1)
         {
             if (currentUser == null) throw new Exception("Cannot run method with null customer");
 
-            Dictionary<string, int> menuOptions = new()
+            Customer customer;
+            if (customerId == currentUser.CustomerId) customer = currentUser;
+            else
             {
-                { "Edit Profile", 1 },
-                { "Delete Profile", 2 }
-            };
+                customer = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {customerId}")?.FirstOrDefault() ?? throw new Exception("Returned null for customerId");
+            }
+
+            Dictionary<string, int> menuOptions;
+            if (currentUser.CustomerIsAdmin && customerId != currentUser.CustomerId)
+            {
+                menuOptions = new()
+                {
+                    { "Edit Profile", 1 },
+                    { "Delete Profile", 2 },
+                    { "Change Admin", 3 }
+                };
+            }
+            else
+            {
+                menuOptions = new()
+                {
+                    { "Edit Profile", 1 },
+                    { "Delete Profile", 2 }
+                };
+            }
 
             while (true)
             {
-                int exitCode = view.ViewCustomerDetails(currentUser.CustomerId, menuOptions);
+                int exitCode = view.ViewCustomerDetails(customer.CustomerId, menuOptions);
 
                 if (exitCode == 0) return 0;
                 else if (exitCode == 1)
                 {
-                    EditProfileScreen(currentUser);
-                    currentUser = storageManager.Customers(SQLAction.Select,
-                                                               $"WHERE customerUsername = @Username",
-                                                             new() { { "@Username", Username } })?.FirstOrDefault() ?? throw new Exception("Null customer returned");
+                    EditProfileScreen(customer);
+                    currentUser = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {customerId}")?.FirstOrDefault() ?? throw new Exception("Null customer returned");
                 }
                 else if (exitCode == 2)
                 {
-                    return DeleteConfirmationScreen<Customer>(currentUser.CustomerId);
+                    return DeleteConfirmationScreen<Customer>(customer.CustomerId);
+                }
+                else if (exitCode == 3)
+                {
+                    customer.CustomerIsAdmin = !customer.CustomerIsAdmin;
+                    storageManager.Customers(SQLAction.Update, $"WHERE customerId = {customer.CustomerId}", insertCustomer: customer);
                 }
             }
         }
 
         private static void CustomerSearchScreen()
         {
-            int userId = 0;
+            int userId;
             string initSearch = "";
             string initPage = "0 0";
-
-            Dictionary<string, int> menuOptions = new()
-            {
-                { "Edit Customer", 1 },
-                { "Delete Customer", 2 }
-            };
 
             while (true)
             {
@@ -535,7 +558,45 @@ namespace TicketBookingApp
                 initSearch = idSearchPage.CustomerFirstName;
                 initPage = idSearchPage.CustomerLastName;
 
-                view.ViewCustomerDetails(userId, menuOptions);
+                int exitCode = ViewProfileScreen(userId);
+                if (exitCode == 1) return;
+            }
+        }
+
+        private static void CustomerTicketsScreen()
+        {
+            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+
+            int ticketId;
+            string initSearch = "";
+            string initPage = "0 0";
+
+            Dictionary<string, int> menuOptions = new()
+                {
+                    { "Delete Ticket", 1 }
+                };
+
+            while (true)
+            {
+                var output = view.CustomerTicketsSearch(currentUser.CustomerId, initSearch, initPage);
+
+                if (output == null) return;
+
+                ticketId = output.Value.Item1;
+                initSearch = output.Value.Item2;
+                initPage = output.Value.Item3;
+
+                while (true)
+                {
+                    int exitCode = view.ViewTicketDetails(ticketId, menuOptions);
+
+                    if (exitCode == 0) break;
+                    else if (exitCode == 1)
+                    {
+                        int deleted = DeleteConfirmationScreen<City>(ticketId);
+                        if (deleted == 1) return;
+                    }
+                }
             }
         }
 
