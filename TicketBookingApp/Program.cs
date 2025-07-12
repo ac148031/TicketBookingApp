@@ -56,6 +56,7 @@ namespace TicketBookingApp
                         { "View All Customers", 4 },
                         { "View All Sales", 5 },
                         { "View All Locations", 6 },
+                        { "View All Cities", 8 },
                         { "Log Out", 3 }
                     };
                 }
@@ -107,6 +108,10 @@ namespace TicketBookingApp
 
                     case 7:
                         EditConcertScreen();
+                        break;
+
+                    case 8:
+                        CitySearchScreen();
                         break;
                 }
             }
@@ -224,6 +229,91 @@ namespace TicketBookingApp
             } while (!registered);
         }
 
+        private static int DeleteConfirmationScreen<T>(int id)
+        {
+            int exitCode = 0;
+
+            if (typeof(T) == typeof(Customer))
+            {
+                Customer user = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {id}")?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
+                exitCode = view.DeleteConfirmation(user.CustomerUsername);
+            }
+            else if (typeof(T) == typeof(Concert))
+            {
+                Concert concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("Concert Id returned Null");
+                exitCode = view.DeleteConfirmation(concert.ConcertName);
+            }
+            else if (typeof(T) == typeof(City))
+            {
+                City city = storageManager.Cities(SQLAction.Select, $"WHERE cityId = {id}")?.FirstOrDefault() ?? throw new Exception("City Id returned Null");
+                exitCode = view.DeleteConfirmation(city.CityName);
+            }
+            else if (typeof(T) == typeof(Location))
+            {
+                Location location = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {id}")?.FirstOrDefault() ?? throw new Exception("Location Id returned Null");
+                exitCode = view.DeleteConfirmation(location.LocationName);
+            }
+            else if (typeof(T) == typeof(CustomerAddress))
+            {
+                CustomerAddress address = storageManager.CustomerAddresses(SQLAction.Select, $"WHERE addressId = {id}")?.FirstOrDefault() ?? throw new Exception("Address Id returned Null");
+                exitCode = view.DeleteConfirmation($"{address.StreetAddress}");
+            }
+            else if (typeof(T) == typeof(Sale))
+            {
+                Sale sale = storageManager.Sales(SQLAction.Select, $"WHERE saleId = {id}")?.FirstOrDefault() ?? throw new Exception("Sale Id returned Null");
+                exitCode = view.DeleteConfirmation($"{sale.SaleId}");
+            }
+            else if (typeof(T) == typeof(ConcertGenre))
+            {
+                ConcertGenre concertGenre = storageManager.ConcertGenres(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("ConcertGenre Id returned Null");
+                exitCode = view.DeleteConfirmation($"{concertGenre.ConcertId}-{concertGenre.GenreId}");
+            }
+            else if (typeof(T) == typeof(Genre))
+            {
+                Genre genre = storageManager.Genres(SQLAction.Select, $"WHERE genreId = {id}")?.FirstOrDefault() ?? throw new Exception("Genre Id returned Null");
+                exitCode = view.DeleteConfirmation(genre.GenreName);
+            }
+
+            if (exitCode == 1)
+            {
+                if (typeof(T) == typeof(Customer))
+                {
+                    storageManager.Customers(SQLAction.Delete, $"WHERE customerId = {id}");
+                }
+                else if (typeof(T) == typeof(Concert))
+                {
+                    storageManager.Concerts(SQLAction.Delete, $"WHERE concertId = {id}");
+                }
+                else if (typeof(T) == typeof(City))
+                {
+                    storageManager.Cities(SQLAction.Delete, $"WHERE cityId = {id}");
+                }
+                else if (typeof(T) == typeof(Location))
+                {
+                    storageManager.Locations(SQLAction.Delete, $"WHERE locationId = {id}");
+                }
+                else if (typeof(T) == typeof(CustomerAddress))
+                {
+                    storageManager.CustomerAddresses(SQLAction.Delete, $"WHERE addressId = {id}");
+                }
+                else if (typeof(T) == typeof(Sale))
+                {
+                    storageManager.Sales(SQLAction.Delete, $"WHERE saleId = {id}");
+                }
+                else if (typeof(T) == typeof(ConcertGenre))
+                {
+                    storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {id}");
+                }
+                else if (typeof(T) == typeof(Genre))
+                {
+                    storageManager.Genres(SQLAction.Delete, $"WHERE genreId = {id}");
+                }
+            }
+
+            return exitCode;
+        }
+
+        // Customer
         private static void EditProfileScreen(Customer existing)
         {
             int errorCode = 0;
@@ -423,90 +513,33 @@ namespace TicketBookingApp
             }
         }
 
-        private static int DeleteConfirmationScreen<T>(int id)
+        private static void CustomerSearchScreen()
         {
-            int exitCode = 0;
+            int userId = 0;
+            string initSearch = "";
+            string initPage = "0 0";
 
-            if (typeof(T) == typeof(Customer))
+            Dictionary<string, int> menuOptions = new()
             {
-                Customer user = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {id}")?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
-                exitCode = view.DeleteConfirmation(user.CustomerUsername);
-            }
-            else if (typeof(T) == typeof(Concert))
-            {
-                Concert concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("Concert Id returned Null");
-                exitCode = view.DeleteConfirmation(concert.ConcertName);
-            }
-            else if (typeof(T) == typeof(City))
-            {
-                City city = storageManager.Cities(SQLAction.Select, $"WHERE cityId = {id}")?.FirstOrDefault() ?? throw new Exception("City Id returned Null");
-                exitCode = view.DeleteConfirmation(city.CityName);
-            }
-            else if (typeof(T) == typeof(Location))
-            {
-                Location location = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {id}")?.FirstOrDefault() ?? throw new Exception("Location Id returned Null");
-                exitCode = view.DeleteConfirmation(location.LocationName);
-            }
-            else if (typeof(T) == typeof(CustomerAddress))
-            {
-                CustomerAddress address = storageManager.CustomerAddresses(SQLAction.Select, $"WHERE addressId = {id}")?.FirstOrDefault() ?? throw new Exception("Address Id returned Null");
-                exitCode = view.DeleteConfirmation($"{address.StreetAddress}");
-            }
-            else if (typeof(T) == typeof(Sale))
-            {
-                Sale sale = storageManager.Sales(SQLAction.Select, $"WHERE saleId = {id}")?.FirstOrDefault() ?? throw new Exception("Sale Id returned Null");
-                exitCode = view.DeleteConfirmation($"{sale.SaleId}");
-            }
-            else if (typeof(T) == typeof(ConcertGenre))
-            {
-                ConcertGenre concertGenre = storageManager.ConcertGenres(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("ConcertGenre Id returned Null");
-                exitCode = view.DeleteConfirmation($"{concertGenre.ConcertId}-{concertGenre.GenreId}");
-            }
-            else if (typeof(T) == typeof(Genre))
-            {
-                Genre genre = storageManager.Genres(SQLAction.Select, $"WHERE genreId = {id}")?.FirstOrDefault() ?? throw new Exception("Genre Id returned Null");
-                exitCode = view.DeleteConfirmation(genre.GenreName);
-            }
+                { "Edit Customer", 1 },
+                { "Delete Customer", 2 }
+            };
 
-            if (exitCode == 1)
+            while (true)
             {
-                if (typeof(T) == typeof(Customer))
-                {
-                    storageManager.Customers(SQLAction.Delete, $"WHERE customerId = {id}");
-                }
-                else if (typeof(T) == typeof(Concert))
-                {
-                    storageManager.Concerts(SQLAction.Delete, $"WHERE concertId = {id}");
-                }
-                else if (typeof(T) == typeof(City))
-                {
-                    storageManager.Cities(SQLAction.Delete, $"WHERE cityId = {id}");
-                }
-                else if (typeof(T) == typeof(Location))
-                {
-                    storageManager.Locations(SQLAction.Delete, $"WHERE locationId = {id}");
-                }
-                else if (typeof(T) == typeof(CustomerAddress))
-                {
-                    storageManager.CustomerAddresses(SQLAction.Delete, $"WHERE addressId = {id}");
-                }
-                else if (typeof(T) == typeof(Sale))
-                {
-                    storageManager.Sales(SQLAction.Delete, $"WHERE saleId = {id}");
-                }
-                else if (typeof(T) == typeof(ConcertGenre))
-                {
-                    storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {id}");
-                }
-                else if (typeof(T) == typeof(Genre))
-                {
-                    storageManager.Genres(SQLAction.Delete, $"WHERE genreId = {id}");
-                }
-            }
+                Customer? idSearchPage = view.CustomerSearch(initSearch, initPage);
 
-            return exitCode;
+                if (idSearchPage == null) return;
+
+                userId = idSearchPage.CustomerId;
+                initSearch = idSearchPage.CustomerFirstName;
+                initPage = idSearchPage.CustomerLastName;
+
+                view.ViewCustomerDetails(userId, menuOptions);
+            }
         }
 
+        // Concerts
         private static void ConcertSearchScreen()
         {
             if (currentUser == null) throw new Exception("Cannot run this method with null customer");
@@ -702,32 +735,7 @@ namespace TicketBookingApp
             loading.Interrupt();
         }
 
-        private static void CustomerSearchScreen()
-        {
-            int userId = 0;
-            string initSearch = "";
-            string initPage = "0 0";
-
-            Dictionary<string, int> menuOptions = new()
-            {
-                { "Edit Customer", 1 },
-                { "Delete Customer", 2 }
-            };
-
-            while (true)
-            {
-                Customer? idSearchPage = view.CustomerSearch(initSearch, initPage);
-
-                if (idSearchPage == null) return;
-
-                userId = idSearchPage.CustomerId;
-                initSearch = idSearchPage.CustomerFirstName;
-                initPage = idSearchPage.CustomerLastName;
-
-                view.ViewCustomerDetails(userId, menuOptions);
-            }
-        }
-
+        // Location
         private static void LocationsSearchScreen()
         {
             if (currentUser == null) throw new Exception("Cannot run method with null customer");
@@ -866,6 +874,7 @@ namespace TicketBookingApp
             loading.Interrupt();
         }
 
+        // Sales
         private static void SalesSearchScreen()
         {
             view.SalesSearch();
@@ -882,6 +891,100 @@ namespace TicketBookingApp
             Sale insert = new(-1, currentUser.CustomerId, concertId, ticketAmount);
 
             storageManager.Sales(SQLAction.Insert, insertSale: insert);
+        }
+
+        // Cities
+        private static void CitySearchScreen()
+        {
+            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+
+            int cityId = 0;
+            string initSearch = "";
+            string initPage = "0 0";
+
+            while (true)
+            {
+                var output = view.CitySearch(initSearch, initPage);
+
+                if (output == null) return;
+
+                cityId = output.Value.Item1;
+                initSearch = output.Value.Item2;
+                initPage = output.Value.Item3;
+
+                if (cityId == -2)
+                {
+                    EditCityScreen();
+                    continue;
+                }
+
+                Dictionary<string, int> menuOptions;
+                if (currentUser.CustomerIsAdmin)
+                {
+                    menuOptions = new()
+                    {
+                        { "Edit City", 1 },
+                        { "Delete City", 2 }
+                    };
+                }
+                else throw new Exception("This method is not intended to be run by non-admin");
+
+                while (true)
+                {
+                    int exitCode = view.ViewCityDetails(cityId, menuOptions);
+
+                    if (exitCode == 0) break;
+                    else if (exitCode == 1) EditCityScreen(cityId);
+                    else if (exitCode == 2)
+                    {
+                        int deleted = DeleteConfirmationScreen<City>(cityId);
+                        if (deleted == 1) return;
+                    }
+                }
+            }
+        }
+
+        private static void EditCityScreen(int? cityId = null)
+        {
+            City? existing = null;
+            if (cityId != null) existing = storageManager.Cities(SQLAction.Select, $"WHERE cityId = {cityId}")?.FirstOrDefault() ?? throw new Exception("CityId returned null");
+
+            int errorCode = 0;
+            City? city;
+
+            while (true)
+            {
+                city = view.EditCityDetails(errorCode, existing);
+                if (city == null) return;
+
+                if (string.IsNullOrEmpty(city.CityName))
+                {
+                    errorCode = 1;
+                    continue;
+                }
+
+                break;
+            }
+
+            string message = cityId == null ? "Creating City" : "Updating City";
+
+            Console.Clear();
+            Thread loading = new(() => ConsoleView.LoadingText(message));
+
+            loading.Start();
+
+            if (cityId == null)
+            {
+                storageManager.Cities(SQLAction.Insert, insertCity: city);
+            }
+            else
+            {
+                storageManager.Cities(SQLAction.Update, $"WHERE cityId = {cityId}", insertCity: city);
+            }
+
+            Thread.Sleep(500);
+
+            loading.Interrupt();
         }
     }
 }
