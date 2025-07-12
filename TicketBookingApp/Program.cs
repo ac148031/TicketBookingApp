@@ -1,7 +1,7 @@
 ﻿// Get all lines of code
 // gitbash -
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc && cd
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc && cd
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc && cd
+// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc && cd
 using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
 
@@ -667,7 +667,7 @@ namespace TicketBookingApp
                 break;
             }
 
-            string message = concertId == -1 ? "Registering User" : "Updating User Information";
+            string message = concertId == -1 ? "Creating Concert" : "Updating Concert";
 
             Console.Clear();
             Thread loading = new(() => ConsoleView.LoadingText(message));
@@ -730,29 +730,140 @@ namespace TicketBookingApp
 
         private static void LocationsSearchScreen()
         {
-            int userId = 0;
+            if (currentUser == null) throw new Exception("Cannot run method with null customer");
+
+            int locationId = 0;
             string initSearch = "";
             string initPage = "0 0";
-
-            //Dictionary<string, int> menuOptions = new()
-            //{
-            //    { "", 1 },
-            //    { "", 2 }
-            //};
 
             while (true)
             {
                 Location? idSearchPage = view.LocationSearch(initSearch, initPage);
 
                 if (idSearchPage == null) return;
+                else if (idSearchPage.LocationCapacity == 1)
+                {
+                    EditLocationScreen();
+                    continue;
+                }
 
-                userId = idSearchPage.LocationId;
+                locationId = idSearchPage.LocationId;
                 initSearch = idSearchPage.LocationName;
                 initPage = idSearchPage.LocationAddress;
 
-                // View location details
-                // view.ViewLocationDetails(storageManager, userId, menuOptions);
+                Dictionary<string, int> menuOptions;
+                if (currentUser.CustomerIsAdmin)
+                {
+                    menuOptions = new()
+                    {
+                        { "Edit Location", 1 },
+                        { "Delete Location", 2 }
+                    };
+                }
+                else throw new Exception("This method is not intended to be run by non-admin");
+
+                while (true)
+                {
+                    int exitCode = view.ViewLocationDetails(locationId, menuOptions);
+
+                    if (exitCode == 0) break;
+                    else if (exitCode == 1) EditLocationScreen(locationId);
+                    else if (exitCode == 2)
+                    {
+                        int deleted = DeleteConfirmationScreen<Location>(locationId);
+                        if (deleted == 1) return;
+                    }
+                }
             }
+        }
+
+        private static void EditLocationScreen(int? locationId = null)
+        {
+            Location? existing = null;
+            if (locationId != null) existing = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {locationId}")?.FirstOrDefault() ?? throw new Exception("LocationId returned null");
+
+            int errorCode = 0;
+            Location? location;
+
+            while (true)
+            {
+                location = view.EditLocationDetails(errorCode, existing);
+                if (location == null) return;
+
+                int cityIdErrors = location.CityId;
+                int capacityErrors = location.LocationCapacity;
+
+                int emptyValues = 0;
+                int emptyProperty = -1;
+                if (string.IsNullOrEmpty(location.LocationName))
+                {
+                    emptyProperty = 0;
+                    emptyValues++;
+                }
+                if (string.IsNullOrEmpty(location.LocationAddress))
+                {
+                    emptyProperty = 1;
+                    emptyValues++;
+                }
+                if (cityIdErrors == -2)
+                {
+                    emptyProperty = 2;
+                    emptyValues++;
+                }
+                if (capacityErrors == -2)
+                {
+                    emptyProperty = 3;
+                    emptyValues++;
+                }
+
+                if (emptyValues > 1)
+                {
+                    errorCode = 1;
+                    continue;
+                }
+                else if (emptyValues == 1)
+                {
+                    errorCode = 2 + emptyProperty;
+                    continue;
+                }
+                else if (cityIdErrors == -1)
+                {
+                    errorCode = 6;
+                    continue;
+                }
+                else if (capacityErrors == -1)
+                {
+                    errorCode = 7;
+                    continue;
+                }
+                else if (location.LocationCapacity <= 0)
+                {
+                    errorCode = 8;
+                    continue;
+                }
+
+                break;
+            }
+
+            string message = locationId == null ? "Creating Location" : "Updating Location";
+
+            Console.Clear();
+            Thread loading = new(() => ConsoleView.LoadingText(message));
+
+            loading.Start();
+
+            if (locationId == null)
+            {
+                storageManager.Locations(SQLAction.Insert, insertLocation: location);
+            }
+            else
+            {
+                storageManager.Locations(SQLAction.Update, $"WHERE locationId = {locationId}", insertLocation: location);
+            }
+
+            Thread.Sleep(500);
+
+            loading.Interrupt();
         }
 
         private static void SalesSearchScreen()
