@@ -127,7 +127,7 @@ namespace TicketBookingApp
                 setClause += prefix + $"{propertyName} = CONVERT( TIME, '{property}')";
                 notNull = true;
             }
-            if (!string.IsNullOrEmpty(property))
+            else if (!string.IsNullOrEmpty(property))
             {
                 setClause += prefix + $"{propertyName} = '{property}'";
                 notNull = true;

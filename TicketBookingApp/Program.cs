@@ -201,7 +201,7 @@ namespace TicketBookingApp
                     bool appropriateUsername = true;
 
                     if (password.Length < 8 || password.Length > 20) appropriatePassword = false;
-                    if (username.Length < 4 || password.Length > 20) appropriateUsername = false;
+                    if (username.Length < 4 || username.Length > 20) appropriateUsername = false;
                     if (!brokenPassword.All(c => char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c)))
                     {
                         appropriatePassword = false;
@@ -591,7 +591,7 @@ namespace TicketBookingApp
                     if (exitCode == 0) break;
                     else if (exitCode == 1)
                     {
-                        int deleted = DeleteConfirmationScreen<City>(ticketId);
+                        int deleted = DeleteConfirmationScreen<Sale>(ticketId);
                         if (deleted == 1) return;
                     }
                 }
@@ -682,12 +682,12 @@ namespace TicketBookingApp
                     emptyProperty = 1;
                     emptyValues++;
                 }
-                if (genreErrors == -2)
+                if (locationErrors == -2)
                 {
                     emptyProperty = 2;
                     emptyValues++;
                 }
-                if (locationErrors == -2)
+                if (genreErrors == -2)
                 {
                     emptyProperty = 3;
                     emptyValues++;
@@ -746,9 +746,19 @@ namespace TicketBookingApp
                     errorCode = 5;
                     continue;
                 }
-                else if (additionConcert.ConcertTicketPrice.ToString().Split('.')[1].Length != 2)
+                else if (additionConcert.ConcertTicketPrice.ToString().Split('.')[1].Length > 2)
                 {
                     errorCode = 6;
+                    continue;
+                }
+                else if (additionConcert.ConcertAvailTickets < 1)
+                {
+                    errorCode = 7;
+                    continue;
+                }
+                else if (additionConcert.ConcertTicketPrice < 0)
+                {
+                    errorCode = 8;
                     continue;
                 }
 
@@ -805,7 +815,7 @@ namespace TicketBookingApp
 
             while (true)
             {
-                Location? idSearchPage = view.LocationSearch(initSearch, initPage);
+                Location? idSearchPage = view.LocationSearch(initSearch, initPage, currentUser.CustomerIsAdmin);
 
                 if (idSearchPage == null) return;
                 else if (idSearchPage.LocationCapacity == 1)
@@ -818,7 +828,7 @@ namespace TicketBookingApp
                 initSearch = idSearchPage.LocationName;
                 initPage = idSearchPage.LocationAddress;
 
-                Dictionary<string, int> menuOptions;
+                Dictionary<string, int>? menuOptions;
                 if (currentUser.CustomerIsAdmin)
                 {
                     menuOptions = new()
@@ -827,7 +837,7 @@ namespace TicketBookingApp
                         { "Delete Location", 2 }
                     };
                 }
-                else throw new Exception("This method is not intended to be run by non-admin");
+                else menuOptions = null;
 
                 while (true)
                 {

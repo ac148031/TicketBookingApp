@@ -698,7 +698,7 @@ namespace TicketBookingApp
                 { 3, "Last Name field cannot be empty" },
                 { 4, "Phone field cannot be empty" },
                 { 5, "Email field cannot be empty" },
-                { 6, "Phone should only contain numbers and country code if applicable" },
+                { 6, "Phone should only be 7 - 15 digits" },
                 { 7, "Email must include domain name" }
             };
 
@@ -1071,8 +1071,16 @@ namespace TicketBookingApp
             Console.SetCursorPosition(1, 6);
             Thread loading = new(() => LoadingText("Fetching data"));
             loading.Start();
-            var data = storageManager.FullSales(SQLAction.Select, $"WHERE customerId = {userId}");
+            var data = storageManager.FullSales(SQLAction.Select, $"WHERE customerId = {userId}") ?? new();
             loading.Interrupt();
+
+            if (data.Count <= 0)
+            {
+                Console.Clear();
+                Console.Write("No tickets to display");
+                Console.Read();
+                return null;
+            }
 
             List<int> tempColumnSizes =
             [
@@ -1089,17 +1097,14 @@ namespace TicketBookingApp
                 tempColumnSizes[largestColumnIndex]--;
             }
 
-            List<int> columnSizes = [tempColumnSizes[0]];
-            tempColumnSizes = tempColumnSizes[1..];
-
             // Make sure it fills the width
-            while (tempColumnSizes.Sum() < dataDisplayWidth - tempColumnSizes.Count - 1 - columnSizes[0])
+            while (tempColumnSizes.Sum() < dataDisplayWidth - tempColumnSizes.Count - 1)
             {
                 int largestColumnIndex = tempColumnSizes.IndexOf(tempColumnSizes.Min());
                 tempColumnSizes[largestColumnIndex]++;
             }
 
-            columnSizes.AddRange(tempColumnSizes);
+            List<int> columnSizes = tempColumnSizes;
 
             // Draw data headings
             string columnHeadings = "Customer".PadRight(columnSizes[0] + 1) +
@@ -1155,7 +1160,6 @@ namespace TicketBookingApp
                         FullSale current = viewableData[i + (selectedPage * dataDisplayHeight)];
 
                         string[] detailList = [
-                            current.SaleId.ToString(),
                             current.SaleCustomer.CustomerFirstName + " " + current.SaleCustomer.CustomerLastName,
                             current.SaleConcert.ConcertName,
                             current.SaleQuantity.ToString(),
@@ -2063,8 +2067,10 @@ namespace TicketBookingApp
                 { 2, "Date field cannot be empty and must be in format DD/MM/YYYY" },
                 { 3, "Time field cannot be empty and must be in format HH:MM (24 Hour Time)" },
                 { 4, "Max Tickets field cannot be empty and must be a number" },
-                { 5, "Price field cannot be empty and number be a price" },
-                { 6, "Price must be in format $XX.XX" }
+                { 5, "Price field cannot be empty and must be a number" },
+                { 6, "Price must be in format XX.XX" },
+                { 7, "Max Tickets cannot be less than 1" },
+                { 8, "Price cannot be less than 0" }
             };
 
             if (errorCode != 0)
@@ -2097,8 +2103,8 @@ namespace TicketBookingApp
 
             if (existing != null)
             {
-                inputFieldsDict[0] = new(existing.ConcertDate.ToString("g"));
-                inputFieldsDict[1] = new(existing.ConcertTime.ToString("g"));
+                inputFieldsDict[0] = new(existing.ConcertDate.ToString("dd/MM/yyyy"));
+                inputFieldsDict[1] = new(existing.ConcertTime.ToString("hh:mm"));
                 inputFieldsDict[2] = new(existing.ConcertAvailTickets.ToString());
                 inputFieldsDict[3] = new(existing.ConcertTicketPrice.ToString("F2"));
 
@@ -2208,7 +2214,7 @@ namespace TicketBookingApp
         }
 
         // Location
-        public int ViewLocationDetails(int locationId, Dictionary<string, int> menuOptions)
+        public int ViewLocationDetails(int locationId, Dictionary<string, int>? menuOptions = null)
         {
             Dictionary<string, object> parameters = new() { { "@id", locationId } };
             FullLocation? location = storageManager.FullLocations(SQLAction.Select, "WHERE locationId = @id", parameters)?.FirstOrDefault() ?? throw new Exception("Returned null for locationId");
@@ -2235,57 +2241,66 @@ namespace TicketBookingApp
                 Console.Write(detail);
             }
 
-            string[] menuOptionKeys = menuOptions.Keys.ToArray();
-
-            int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
-            longestOption = longestOption < 23 ? 23 : longestOption;
-
-            int startXPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - ((longestOption + 4) / 2d));
-            int startYPos = (int)Math.Round((WindowHeight / 2d) - (menuOptionKeys.Length + 1));
-
-            for (int i = 0; i < (2 * menuOptionKeys.Length) + 1; i++)
+            List<string> menuOptionKeys = new();
+            int startXPos = 0;
+            int startYPos = 0;
+            if (menuOptions != null)
             {
-                Console.SetCursorPosition(startXPos, startYPos + i);
-                if (i % 2 == 0)
+                menuOptionKeys = menuOptions.Keys.ToList();
+                int longestOption = menuOptionKeys.Aggregate(0, (hold, next) => Math.Max(hold, next.Length));
+                longestOption = longestOption < 23 ? 23 : longestOption;
+
+                startXPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - ((longestOption + 4) / 2d));
+                startYPos = (int)Math.Round((WindowHeight / 2d) - (menuOptionKeys.Count + 1));
+
+                for (int i = 0; i < (2 * menuOptionKeys.Count) + 1; i++)
                 {
-                    if (i == 0)
+                    Console.SetCursorPosition(startXPos, startYPos + i);
+                    if (i % 2 == 0)
                     {
-                        Console.Write("┌" + new string('─', longestOption + 2) + "┐");
-                    }
-                    else if (i == menuOptionKeys.Length * 2)
-                    {
-                        Console.Write("└" + new string('─', longestOption + 2) + "┘");
+                        if (i == 0)
+                        {
+                            Console.Write("┌" + new string('─', longestOption + 2) + "┐");
+                        }
+                        else if (i == menuOptionKeys.Count * 2)
+                        {
+                            Console.Write("└" + new string('─', longestOption + 2) + "┘");
+                        }
+                        else
+                        {
+                            Console.Write("├" + new string('─', longestOption + 2) + "┤");
+                        }
                     }
                     else
                     {
-                        Console.Write("├" + new string('─', longestOption + 2) + "┤");
+                        Console.Write("│" + new string(' ', longestOption + 2) + "│");
                     }
                 }
-                else
-                {
-                    Console.Write("│" + new string(' ', longestOption + 2) + "│");
-                }
             }
+
 
             int selectedOption = 0;
             ConsoleKeyInfo input;
 
             while (true)
             {
-                for (int i = 0; i < menuOptionKeys.Length; i++)
+                if (menuOptions != null)
                 {
-                    int xPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - (menuOptionKeys[i].Length / 2d));
-                    Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
-                    if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
-                    else Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.Write(menuOptionKeys[i]);
-                    Console.ForegroundColor = ConsoleColor.White;
+                    for (int i = 0; i < menuOptionKeys.Count; i++)
+                    {
+                        int xPos = (int)Math.Round(WindowWidth - (halfSize / 2d) - (menuOptionKeys[i].Length / 2d));
+                        Console.SetCursorPosition(xPos, startYPos + (i * 2) + 1);
+                        if (i == selectedOption) Console.ForegroundColor = ConsoleColor.White;
+                        else Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write(menuOptionKeys[i]);
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
                 }
 
                 input = Console.ReadKey(true);
 
                 if (input.MatchesInput("UpArrow") && selectedOption > 0) selectedOption--;
-                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Length - 1) selectedOption++;
+                else if (input.MatchesInput("DownArrow") && selectedOption < menuOptionKeys.Count - 1) selectedOption++;
                 else if (input.MatchesInput(["E", "Control"]))
                 {
                     Program.Exit();
@@ -2296,23 +2311,27 @@ namespace TicketBookingApp
                 }
                 else if (input.MatchesInput("Tab"))
                 {
-                    if (selectedOption == menuOptionKeys.Length - 1) selectedOption = 0;
+                    if (selectedOption == menuOptionKeys.Count - 1) selectedOption = 0;
                     else selectedOption++;
                 }
                 else if (input.MatchesInput("Enter"))
                 {
                     Console.CursorVisible = true;
-                    return menuOptions[menuOptionKeys[selectedOption]];
+                    if (menuOptions != null) return menuOptions[menuOptionKeys[selectedOption]];
+                    else return 0;
                 }
             }
         }
 
-        public Location? LocationSearch(string initSearch = "", string initPage = "0 0")
+        public Location? LocationSearch(string initSearch = "", string initPage = "0 0", bool isAdmin = false)
         {
             Console.Clear();
             Console.CursorVisible = false;
             DrawHeader("Locations");
-            DrawFooter(["Back - Ctrl + B ", "New - Ctrl + N", "Detailed View - Enter", "Change Sort - Tab", "Arrow keys to select"]);
+
+            List<string> footerText = ["Back - Ctrl + B ", "Detailed View - Enter", "Change Sort - Tab", "Arrow keys to select"];
+            if (isAdmin) footerText.Insert(1, "New - Ctrl + N");
+            DrawFooter(footerText.ToArray());
             DrawSearchBar(initSearch);
 
             // 7 to account for header + footer + searchbar, 1 for data headings
@@ -2477,7 +2496,7 @@ namespace TicketBookingApp
                     if (sort == sortBy.Length - 1) sort = 0;
                     else sort++;
                 }
-                else if (input.MatchesInput(["N", "Control"]))
+                else if (input.MatchesInput(["N", "Control"]) && isAdmin)
                 {
                     return new(-1, "", -1, "", 1);
                 }
@@ -2529,7 +2548,8 @@ namespace TicketBookingApp
         {
             Console.Clear();
             Console.CursorVisible = false;
-            DrawHeader("Edit Venue");
+            if (existing != null) DrawHeader("Edit Venue");
+            else DrawHeader("Create Venue");
             DrawFooter(["Back - Ctrl + B"]);
 
             string[] inputFields = [
