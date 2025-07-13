@@ -1,8 +1,4 @@
-﻿// Get all lines of code
-// gitbash -
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp/TicketBookingApp" && git ls-files '*.cs' '*.sql' -z | xargs -0 wc && cd
-// cd "OneDrive - Avondale College/School/2025/12TPI/TicketBookingApp/TicketBookingApp" && git ls-files '*.cs' -z | xargs -0 wc && cd
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -25,8 +21,10 @@ namespace TicketBookingApp
 
         static void Main()
         {
-            //storageManager.Setup();
-            //Exit();
+            if (storageManager.NumOfTables() == 0)
+            {
+                storageManager.Setup();
+            }
 
             while (true)
             {

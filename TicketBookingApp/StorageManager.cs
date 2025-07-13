@@ -45,6 +45,17 @@ namespace TicketBookingApp
             }
         }
 
+        public int NumOfTables()
+        {
+            using (SqlCommand cmd = new("SELECT COUNT(*) As tableCount FROM information_schema.tables", connection))
+            {
+                using SqlDataReader reader = cmd.ExecuteReader();
+
+                reader.Read();
+                return reader.GetInt32(reader.GetOrdinal("tableCount"));
+            }
+        }
+
         public void Setup()
         {
             Thread loading = new(() => ConsoleView.LoadingText("Loading Data"));
