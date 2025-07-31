@@ -1482,7 +1482,7 @@ namespace TicketBookingApp
             }
         }
 
-        public Concert? ConcertSearch(string initSearch = "", string initPage = "0 0")
+        public Concert? ConcertSearch(string initSearch = "", string initPage = "0 0", bool upcoming = true)
         {
             Console.Clear();
             Console.CursorVisible = false;
@@ -1562,6 +1562,11 @@ namespace TicketBookingApp
                 var viewableData = data.Where(c => c.ConcertName.Contains(sb.ToString(), StringComparison.OrdinalIgnoreCase)
                                                 || c.ConcertLocation.LocationName.StartsWith(sb.ToString(), StringComparison.OrdinalIgnoreCase)
                                                 || c.GenreList.Any(g => g.GenreName.StartsWith(sb.ToString(), StringComparison.OrdinalIgnoreCase))).ToList();
+
+                if (upcoming)
+                {
+                    viewableData = viewableData.Where(c => new DateTime(c.ConcertDate, c.ConcertTime) > DateTime.Now).ToList();
+                }
 
                 viewableData = sortBy[sort] switch
                 {

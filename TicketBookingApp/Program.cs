@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using Microsoft.Data.SqlClient;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -8,7 +10,9 @@ namespace TicketBookingApp
         private static string Username = string.Empty;
         private static Customer? currentUser = null;
 
-        private static readonly string connectionString = "Data Source=(localdb)\\ProjectModels;Initial Catalog=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite; Multi Subnet Failover=False;";
+        private static readonly string mdfPath = Path.Combine(AppContext.BaseDirectory, "../../..", "TicketBookingDatabase.mdf");
+        private static readonly string connectionString = $@"Data Source=(localdb)\MSSQLLocalDB;AttachDbFilename={mdfPath};Database=TicketBookingDatabase;Integrated Security=True; Connection Timeout=30;";
+
         private static readonly StorageManager storageManager = new(connectionString);
         private static readonly ConsoleView view = new(storageManager);
 
@@ -50,12 +54,13 @@ namespace TicketBookingApp
                     {
                         { "View My Profile", 1 },
                         { "View My Tickets", 9 },
-                        { "View All Concerts", 2 },
+                        { "View Upcoming Concerts", 2 },
                         { "Create Concert", 7 },
                         { "View All Customers", 4 },
                         { "View All Sales", 5 },
                         { "View All Locations", 6 },
                         { "View All Cities", 8 },
+                        { "View All Reports", 10 },
                         { "Log Out", 3 }
                     };
                 }
@@ -116,6 +121,10 @@ namespace TicketBookingApp
 
                     case 9:
                         CustomerTicketsScreen();
+                        break;
+
+                    case 10:
+                        ReportsScreen();
                         break;
                 }
             }
@@ -315,6 +324,39 @@ namespace TicketBookingApp
             }
 
             return exitCode;
+        }
+
+        private static void ReportsScreen()
+        {
+            while (true)
+            {
+                Dictionary<string, int> menuOptions = new()
+                {
+                    { "View All Concerts", 1 },
+                    { "View Concert Revenues", 2 },
+                    { "View Venue Popularity", 3 },
+                    { "Go Back", 4 }
+                };
+
+                int exitCode = view.Menu(menuOptions);
+
+                switch (exitCode)
+                {
+                    case 1:
+                        ConcertSearchScreen(false);
+                        break;
+
+                    case 2:
+
+                        break;
+
+                    case 3:
+                        break;
+
+                    case 4:
+                        return;
+                }
+            }
         }
 
         // Customer
@@ -599,16 +641,17 @@ namespace TicketBookingApp
         }
 
         // Concerts
-        private static void ConcertSearchScreen()
+        private static void ConcertSearchScreen(bool upcoming = true)
         {
             if (currentUser == null) throw new Exception("Cannot run this method with null customer");
 
             int concertId = 0;
             string initSearch = "";
             string initPage = "0 0";
+
             while (true)
             {
-                Concert? idSearchPage = view.ConcertSearch(initSearch, initPage);
+                Concert? idSearchPage = view.ConcertSearch(initSearch, initPage, upcoming);
 
                 if (idSearchPage == null) return;
 
