@@ -43,4 +43,31 @@ namespace TicketBookingApp.Table_Classes
             GenreList = new List<Genre>();
         }
     }
+
+    public class ConcertRevenue
+    {
+        public int ConcertId { get; set; }
+        public string ConcertName { get; set; }
+        public int TotalTicketSold { get; set; }
+        public decimal TotalRevenue { get; set; }
+
+        public ConcertRevenue(int concertId, string concertName, int totalTicketSold, decimal totalRevenue)
+        {
+            ConcertId = concertId;
+            ConcertName = concertName;
+            TotalTicketSold = totalTicketSold;
+            TotalRevenue = totalRevenue;
+        }
+
+        public static List<ConcertRevenue> FromFullSales(List<FullSale> sales)
+        {
+
+            return sales.GroupBy(s => s.SaleConcert.ConcertId).Select(group => new ConcertRevenue(
+                    group.Key,
+                    group.FirstOrDefault().SaleConcert.ConcertName,
+                    group.Sum(s => s.SaleQuantity),
+                    group.Sum(s => s.SaleQuantity * group.FirstOrDefault().SaleConcert.ConcertTicketPrice)
+                )).ToList();
+        }
+    }
 }

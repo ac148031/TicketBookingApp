@@ -347,10 +347,11 @@ namespace TicketBookingApp
                         break;
 
                     case 2:
-
+                        view.ConcertRevenuesSearch();
                         break;
 
                     case 3:
+
                         break;
 
                     case 4:

@@ -1708,6 +1708,208 @@ namespace TicketBookingApp
             }
         }
 
+        public void ConcertRevenuesSearch()
+        {
+            Console.Clear();
+            Console.CursorVisible = false;
+            DrawHeader("Concert Revenues");
+            DrawFooter(["Back - Ctrl + B ", "Change Sort - Tab", "Arrow keys to select"]);
+            DrawSearchBar("");
+
+            // 7 to account for header + footer + searchbar, 1 for data headings
+            int paddingAmount = 1;
+            int dataDisplayHeight = WindowHeight - (paddingAmount * 2) - 7 - 1;
+            int dataDisplayWidth = WindowWidth - (paddingAmount * 2);
+
+            // Get column widths
+            Console.SetCursorPosition(1, 6);
+            Thread loading = new(() => LoadingText("Fetching data"));
+            loading.Start();
+
+            var sales = storageManager.FullSales(SQLAction.Select);
+            List<ConcertRevenue> data = ConcertRevenue.FromFullSales(sales);
+
+            loading.Interrupt();
+
+            List<int> columnSizes =
+            [
+                data.Max(c => c.ConcertId.ToString().Length),
+                data.Max(c => c.ConcertName.Length),
+                data.Max(c => c.TotalTicketSold.ToString().Length),
+                data.Max(c => c.TotalRevenue.ToString("C").Length)
+            ];
+
+            // Make sure it isnt bigger than the width
+            while (columnSizes.Sum() > dataDisplayWidth - columnSizes.Count)
+            {
+                int largestColumnIndex = columnSizes.LastIndexOf(columnSizes.Max());
+                columnSizes[largestColumnIndex]--;
+            }
+
+            // Make sure it fills the width
+            while (columnSizes.Sum() < dataDisplayWidth - columnSizes.Count)
+            {
+                int largestColumnIndex = columnSizes.IndexOf(columnSizes[1..].Min());
+                columnSizes[largestColumnIndex]++;
+            }
+
+            string columnHeadings = "ID".PadRight(columnSizes[0] + 1) +
+                                    "Concert".PadRight(columnSizes[1] + 1) +
+                                    "Sales".PadRight(columnSizes[2] + 1) +
+                                    "Revenue".PadRight(columnSizes[3]);
+
+            Console.SetCursorPosition(1, 6);
+            Console.BackgroundColor = ConsoleColor.DarkCyan;
+            Console.Write(columnHeadings);
+            Console.ResetColor();
+
+            // Search
+            string[] sortBy = columnHeadings.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            int longestSortBy = sortBy.Max(s => s.Length);
+            int sort = 0;
+
+            StringBuilder sb = new();
+            ConsoleKeyInfo input;
+
+            int selectedLine = 0;
+            int selectedPage = 0;
+
+            int xOffset;
+
+            while (true)
+            {
+                int lastLine = dataDisplayHeight + 1;
+                int lastPage = 0;
+
+                string sortMessage = "Sort: " + sortBy[sort] + new string('─', longestSortBy - sortBy[sort].Length);
+                Console.SetCursorPosition(WindowWidth - 2 - sortMessage.Length, 4);
+                Console.Write(sortMessage);
+
+                //Display Data
+                var viewableData = data.Where(c => c.ConcertName.Contains(sb.ToString(), StringComparison.OrdinalIgnoreCase)
+                                                || c.ConcertId.ToString().StartsWith(sb.ToString(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+                viewableData = sortBy[sort] switch
+                {
+                    "ID" => viewableData.OrderBy(c => c.ConcertId).ToList(),
+                    "Concert" => viewableData.OrderBy(c => c.ConcertName).ThenBy(c => c.ConcertId).ToList(),
+                    "Sales" => viewableData.OrderByDescending(c => c.TotalTicketSold).ThenBy(c => c.ConcertId).ToList(),
+                    "Revenue" => viewableData.OrderByDescending(c => c.TotalRevenue).ThenBy(c => c.ConcertId).ToList(),
+                    _ => viewableData
+                };
+
+                for (int i = 0; i < dataDisplayHeight; i++)
+                {
+                    Console.SetCursorPosition(1, 7 + i);
+                    if (i + (selectedPage * dataDisplayHeight) < viewableData.Count)
+                    {
+                        ConcertRevenue current = viewableData[i + (selectedPage * dataDisplayHeight)];
+
+                        string[] detailList = [
+                            current.ConcertId.ToString(),
+                            current.ConcertName,
+                            current.TotalTicketSold.ToString(),
+                            current.TotalRevenue.ToString("C")
+                            ];
+
+                        string details = "";
+
+                        for (int j = 0; j < columnSizes.Count; j++)
+                        {
+                            if (j != 0) details += " ";
+                            details += detailList[j].PadRight(columnSizes[j])[..columnSizes[j]];
+                        }
+
+                        if (i == selectedLine)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.BackgroundColor = ConsoleColor.White;
+                        }
+
+                        Console.Write(details);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.Write(new string(' ', WindowWidth - 1));
+                    }
+                }
+
+                // Amount of data records / how many records per page
+                // Whichever is lower, the display height or the the number of records on screen minus one (to get the last record)
+                lastPage = (int)Math.Floor((double)viewableData.Count / dataDisplayHeight);
+                lastLine = Math.Min(dataDisplayHeight, viewableData.Count - (dataDisplayHeight * selectedPage)) - 1;
+
+                // Search Data
+                if (sb.Length < WindowWidth - 5)
+                {
+                    xOffset = sb.Length;
+                }
+                else
+                {
+                    xOffset = WindowWidth - 5;
+                    Console.SetCursorPosition(2, 3);
+                    Console.Write(sb.ToString(sb.Length - xOffset, xOffset) + " ");
+                }
+
+                Console.SetCursorPosition(2 + xOffset, 3);
+                Console.CursorVisible = true;
+                input = Console.ReadKey();
+                Console.CursorVisible = false;
+
+                if (input.MatchesInput(["E", "Control"])) Program.Exit();
+                else if (input.MatchesInput(["B", "Control"])) return;
+                else if (input.MatchesInput("UpArrow") && selectedLine > 0) selectedLine--;
+                else if (input.MatchesInput("UpArrow") && selectedLine == 0) selectedLine = lastLine;
+                else if (input.MatchesInput("DownArrow") && selectedLine < lastLine) selectedLine++;
+                else if (input.MatchesInput("DownArrow") && selectedLine == lastLine) selectedLine = 0;
+                else if (input.MatchesInput("RightArrow"))
+                {
+                    selectedLine = 0;
+                    if (selectedPage < lastPage) selectedPage++;
+                    else if (selectedPage == lastPage) selectedPage = 0;
+                }
+                else if (input.MatchesInput("LeftArrow"))
+                {
+                    selectedLine = 0;
+                    if (selectedPage > 0) selectedPage--;
+                    else if (selectedPage == 0) selectedPage = lastPage;
+                }
+                else if (input.MatchesInput("Tab"))
+                {
+                    if (sort == sortBy.Length - 1) sort = 0;
+                    else sort++;
+                }
+                else if (input.MatchesInput("Backspace"))
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Length--;
+                        if (sb.Length < WindowWidth - 4)
+                        {
+                            Console.SetCursorPosition(2, 3);
+                            Console.Write(sb.ToString(0, sb.Length) + " ");
+                        }
+
+                        selectedPage = 0;
+                        selectedLine = 0;
+                    }
+                }
+                else
+                {
+                    char c = input.KeyChar;
+
+                    if (char.IsLetterOrDigit(c) || char.IsSymbol(c) || char.IsPunctuation(c) || c == ' ')
+                    {
+                        sb.Append(c);
+
+                        selectedPage = 0;
+                        selectedLine = 0;
+                    }
+                }
+            }
+        }
+
         public (Concert, List<Genre>)? EditConcertDetailsPage1(int errorCode, Concert? existing = null)
         {
             Console.Clear();
