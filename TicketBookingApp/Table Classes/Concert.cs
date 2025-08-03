@@ -61,7 +61,6 @@ namespace TicketBookingApp.Table_Classes
 
         public static List<ConcertRevenue> FromFullSales(List<FullSale> sales)
         {
-
             return sales.GroupBy(s => s.SaleConcert.ConcertId).Select(group => new ConcertRevenue(
                     group.Key,
                     group.FirstOrDefault().SaleConcert.ConcertName,

@@ -351,7 +351,7 @@ namespace TicketBookingApp
                         break;
 
                     case 3:
-
+                        view.PopularVenuesSearch();
                         break;
 
                     case 4:

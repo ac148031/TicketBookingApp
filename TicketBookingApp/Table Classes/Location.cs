@@ -35,4 +35,30 @@ namespace TicketBookingApp.Table_Classes
             CityName = cityName;
         }
     }
+
+    public class LocationPopularity
+    {
+        public int LocationId { get; set; }
+        public string LocationName { get; set; }
+        public int TotalSales { get; set; }
+        public int TotalConcerts { get; set; }
+
+        public LocationPopularity(int locationId, string locationName, int totalSales, int totalConcerts)
+        {
+            LocationId = locationId;
+            LocationName = locationName;
+            TotalSales = totalSales;
+            TotalConcerts = totalConcerts;
+        }
+
+        public static List<LocationPopularity> FromFullSales(List<FullSale> sales)
+        {
+            return sales.GroupBy(s => s.SaleConcert.ConcertLocation.LocationId).Select(group => new LocationPopularity(
+                    group.Key,
+                    group.FirstOrDefault().SaleConcert.ConcertLocation.LocationName,
+                    group.Sum(s => s.SaleQuantity),
+                    group.GroupBy(s => s.SaleConcert.ConcertId).Count()
+                )).ToList();
+        }
+    }
 }
