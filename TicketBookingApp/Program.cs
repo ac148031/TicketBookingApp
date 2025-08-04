@@ -1,6 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
+﻿using System.Text.RegularExpressions;
 using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
@@ -420,6 +418,21 @@ namespace TicketBookingApp
                     errorCode = 7;
                     continue;
                 }
+                else if (!newCustomer.CustomerFirstName.CheckLength(1, 50))
+                {
+                    errorCode = 8;
+                    continue;
+                }
+                else if (!newCustomer.CustomerLastName.CheckLength(1, 50))
+                {
+                    errorCode = 9;
+                    continue;
+                }
+                else if (!newCustomer.CustomerEmail.CheckLength(1, 50))
+                {
+                    errorCode = 10;
+                    continue;
+                }
 
                 break;
             }
@@ -480,6 +493,11 @@ namespace TicketBookingApp
                         else if (!Regex.IsMatch(newAddress.PostalCode, @"^\d{4}$"))
                         {
                             errorCode = 6;
+                            continue;
+                        }
+                        else if (!newAddress.StreetAddress.CheckLength(1, 70))
+                        {
+                            errorCode = 7;
                             continue;
                         }
 
@@ -757,6 +775,16 @@ namespace TicketBookingApp
                     errorCode = 7;
                     continue;
                 }
+                else if (!newConcert.ConcertName.CheckLength(1, 100))
+                {
+                    errorCode = 8;
+                    continue;
+                }
+                else if (!newConcert.ConcertDescription.CheckLength(1, 255))
+                {
+                    errorCode = 9;
+                    continue;
+                }
 
                 break;
             }
@@ -962,6 +990,16 @@ namespace TicketBookingApp
                     errorCode = 8;
                     continue;
                 }
+                else if (!location.LocationName.CheckLength(1, 50))
+                {
+                    errorCode = 9;
+                    continue;
+                }
+                else if (!location.LocationAddress.CheckLength(1, 70))
+                {
+                    errorCode = 10;
+                    continue;
+                }
 
                 break;
             }
@@ -1075,6 +1113,11 @@ namespace TicketBookingApp
                     errorCode = 1;
                     continue;
                 }
+                else if (city.CityName.CheckLength(1, 50))
+                {
+                    errorCode = 2;
+                    continue;
+                }
 
                 break;
             }
@@ -1098,6 +1141,14 @@ namespace TicketBookingApp
             Thread.Sleep(500);
 
             loading.Interrupt();
+        }
+    }
+
+    public static class StringExtensions
+    {
+        public static bool CheckLength(this string input, int min, int max)
+        {
+            return (input.Length >= min) && (input.Length <= max);
         }
     }
 }

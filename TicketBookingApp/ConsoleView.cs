@@ -699,7 +699,10 @@ namespace TicketBookingApp
                 { 4, "Phone field cannot be empty" },
                 { 5, "Email field cannot be empty" },
                 { 6, "Phone should only be 7 - 15 digits" },
-                { 7, "Email must include domain name" }
+                { 7, "Email must include domain name" },
+                { 8, "First Name must be less than 50 chars" },
+                { 9, "Last Name must be less than 50 chars" },
+                { 10, "Email must be less than 50 chars" }
             };
 
             if (errorCode != 0)
@@ -839,7 +842,8 @@ namespace TicketBookingApp
                 { 3, "City field cannot be empty" },
                 { 4, "Post Code field cannot be empty" },
                 { 5, "Selected City is not in list" },
-                { 6, "Postal Code must be four digits" }
+                { 6, "Postal Code must be four digits" },
+                { 7, "Address field must be less than 70 chars" }
             };
 
             if (errorCode != 0)
@@ -1947,6 +1951,8 @@ namespace TicketBookingApp
                 { 5, "Genres field cannot be empty" },
                 { 6, "Venue does not match any venues in database" },
                 { 7, "All genres do not match genres in the database, must be comma separated" },
+                { 8, "Name field must be less than 100 chars" },
+                { 9, "Description field must be less than 255 chars" }
             };
 
             if (errorCode != 0)
@@ -2989,7 +2995,9 @@ namespace TicketBookingApp
                 { 5, "Capacity field cannot be empty" },
                 { 6, "Selected City is not in list" },
                 { 7, "Capacity must be a number" },
-                { 8, "Capacity must be greater than 0" }
+                { 8, "Capacity must be greater than 0" },
+                { 8, "Name field must be less than 50 chars" },
+                { 10, "Address field must be less than 70 chars" }
             };
 
             if (errorCode != 0)
@@ -3527,7 +3535,8 @@ namespace TicketBookingApp
 
             Dictionary<int, string> errorMessages = new()
             {
-                { 1, "Name field cannot be empty" }
+                { 1, "Name field cannot be empty" },
+                { 2, "Name field must be less than 50 chars" }
             };
 
             if (errorCode != 0)
