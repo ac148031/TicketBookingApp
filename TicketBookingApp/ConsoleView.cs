@@ -4031,6 +4031,7 @@ namespace TicketBookingApp
             }
         }
 
+        // Takes a string and splits them into a list of strings which are full words below a certain size
         public List<string> LineWrap(string line, string label, int size)
         {
             List<string> wrappedLine = new();
@@ -4054,6 +4055,7 @@ namespace TicketBookingApp
             return wrappedLine;
         }
 
+        // These are just used throughout the program to draw part of the CUI
         private void DrawHeader(string? screen = null)
         {
             string line = new('─', WindowWidth);
@@ -4107,6 +4109,7 @@ namespace TicketBookingApp
             }
         }
 
+        // Displays a loading text, designed to run asynchronously
         public static void LoadingText(string message)
         {
             Console.CursorVisible = false;
@@ -4138,6 +4141,7 @@ namespace TicketBookingApp
 
     public static class ConsoleKeyInfoExtensions
     {
+        // Used this class to call these methods directly on the ConsoleKeyInfo variable for readability and ease of coding
         public static bool MatchesInput(this ConsoleKeyInfo input, string[] desiredComponents)
         {
             if (Enum.TryParse(desiredComponents[0], true, out ConsoleKey key) && input.Key == key)
