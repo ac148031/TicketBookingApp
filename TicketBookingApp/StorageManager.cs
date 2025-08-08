@@ -4,6 +4,7 @@ using TicketBookingApp.Table_Classes;
 
 namespace TicketBookingApp
 {
+    // Used this enum for readability, to choose an action for the SQL Methods
     public enum SQLAction
     {
         Select,
@@ -45,6 +46,7 @@ namespace TicketBookingApp
             }
         }
 
+        // Count Number of tables in connected database
         public int NumOfTables()
         {
             using (SqlCommand cmd = new("SELECT COUNT(*) As tableCount FROM information_schema.tables", connection))
@@ -56,6 +58,7 @@ namespace TicketBookingApp
             }
         }
 
+        // Run files to set up database with data if there isnt already
         public void Setup()
         {
             Thread loading = new(() => ConsoleView.LoadingText("Loading Data"));
@@ -72,6 +75,7 @@ namespace TicketBookingApp
                 "TicketBookingDatabase",
                 file);
 
+            // Split files into bactches of SQL commands to run
             List<string> batches =
             [
                 .. File.ReadAllText(GetDirectory("qryTableAdd.sql")).Split("GO", StringSplitOptions.RemoveEmptyEntries),
@@ -91,6 +95,7 @@ namespace TicketBookingApp
             loading.Interrupt();
         }
 
+        // Used to add to a SQL string the properties to insert
         private static void AddInsertProperties(string? property, string propertyName, ref string values, ref string columns, ref bool notNull)
         {
             string prefix = values[^1] == '(' ? "" : ", ";
@@ -114,6 +119,7 @@ namespace TicketBookingApp
             }
         }
 
+        // Used to add to a SQL string the properties to update
         private static void AddUpdateProperties(string? property, string propertyName, ref string setClause, ref bool notNull)
         {
             string prefix = setClause.Length <= 4 ? "" : ", ";
@@ -133,6 +139,18 @@ namespace TicketBookingApp
                 notNull = true;
             }
         }
+
+        /*----------------------------------------------
+         * All functions below this work in this way:
+         * They get an SQLAction, which determines what to do with the selected data
+         * They then create an SQL string to insert/select/update/delete data
+         * This is filtered by a provided where clause, which if left empty will apply to all records.
+         * They then execute the SQL string in the connected database
+         * Then if values are returned they read them into lists of data types.
+         * 
+         * EXCEPTION - Full_____ methods can only select,
+         *    piecing together data from multiple to remove IDs and replace them with actual values 
+         *----------------------------------------------*/
 
         public List<City>? Cities(SQLAction SQLAction, string whereClause = "", Dictionary<string, object>? parameters = null, City? insertCity = null)
         {
