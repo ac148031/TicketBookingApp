@@ -23,17 +23,24 @@ namespace TicketBookingApp
 
         static void Main()
         {
+            /* WARNING - ONLY RUN IF CREATION FILES ARE THERE
+               If the database has not been initialised with data, add data to database */
+            /*
             if (storageManager.NumOfTables() == 0)
             {
                 storageManager.Setup();
             }
+            */
 
+            // Main program loop
             while (true)
             {
+                // Log user in if not logged in
                 if (currentUser == null)
                 {
                     LoginScreen();
 
+                    // Get full current user from username
                     List<Customer>? users = storageManager.Customers(SQLAction.Select,
                                                                $"WHERE customerUsername = @Username",
                                                              new() { { "@Username", Username } });
@@ -44,6 +51,7 @@ namespace TicketBookingApp
                         throw new Exception("Should not be more than one user to a username");
                 }
 
+                // Menu options for admin or default user
                 Dictionary<string, int> menuOptions;
 
                 if (currentUser.CustomerIsAdmin)
@@ -74,8 +82,10 @@ namespace TicketBookingApp
                     };
                 }
 
+                // Get desired option
                 int exitCode = view.Menu(menuOptions);
 
+                // act on desired option
                 switch (exitCode)
                 {
                     case 1:
@@ -148,6 +158,7 @@ namespace TicketBookingApp
                 }
                 else
                 {
+                    // Check if user's username and password are valid
                     List<Customer>? customers = storageManager.Customers(SQLAction.Select,
                                                                          $"WHERE customerUsername = @Username",
                                                                          new() { { "@Username", tempUsername } });
@@ -177,6 +188,7 @@ namespace TicketBookingApp
             {
                 (username, password, confirmPassword) = view.Register(errorCode);
 
+                // Check if the registration details are ok
                 if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(confirmPassword))
                 {
                     errorCode = 1;
@@ -243,82 +255,85 @@ namespace TicketBookingApp
         private static int DeleteConfirmationScreen<T>(int id)
         {
             int exitCode = 0;
+            string name = "";
 
+            // Display a confirmation screen depending on the type of variable.
             if (typeof(T) == typeof(Customer))
             {
                 Customer user = storageManager.Customers(SQLAction.Select, $"WHERE customerId = {id}")?.FirstOrDefault() ?? throw new Exception("Customer Id returned Null");
-                exitCode = view.DeleteConfirmation(user.CustomerUsername);
+                name = user.CustomerUsername;
             }
             else if (typeof(T) == typeof(Concert))
             {
                 Concert concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("Concert Id returned Null");
-                exitCode = view.DeleteConfirmation(concert.ConcertName);
+                name = concert.ConcertName;
             }
             else if (typeof(T) == typeof(City))
             {
                 City city = storageManager.Cities(SQLAction.Select, $"WHERE cityId = {id}")?.FirstOrDefault() ?? throw new Exception("City Id returned Null");
-                exitCode = view.DeleteConfirmation(city.CityName);
+                name = city.CityName;
             }
             else if (typeof(T) == typeof(Location))
             {
                 Location location = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {id}")?.FirstOrDefault() ?? throw new Exception("Location Id returned Null");
-                exitCode = view.DeleteConfirmation(location.LocationName);
+                name = location.LocationName;
             }
             else if (typeof(T) == typeof(CustomerAddress))
             {
                 CustomerAddress address = storageManager.CustomerAddresses(SQLAction.Select, $"WHERE addressId = {id}")?.FirstOrDefault() ?? throw new Exception("Address Id returned Null");
-                exitCode = view.DeleteConfirmation($"{address.StreetAddress}");
+                name = $"{address.StreetAddress}";
             }
             else if (typeof(T) == typeof(Sale))
             {
                 Sale sale = storageManager.Sales(SQLAction.Select, $"WHERE saleId = {id}")?.FirstOrDefault() ?? throw new Exception("Sale Id returned Null");
-                exitCode = view.DeleteConfirmation($"{sale.SaleId}");
+                name = $"{sale.SaleId}";
             }
             else if (typeof(T) == typeof(ConcertGenre))
             {
                 ConcertGenre concertGenre = storageManager.ConcertGenres(SQLAction.Select, $"WHERE concertId = {id}")?.FirstOrDefault() ?? throw new Exception("ConcertGenre Id returned Null");
-                exitCode = view.DeleteConfirmation($"{concertGenre.ConcertId}-{concertGenre.GenreId}");
+                name = $"{concertGenre.ConcertId}-{concertGenre.GenreId}";
             }
             else if (typeof(T) == typeof(Genre))
             {
                 Genre genre = storageManager.Genres(SQLAction.Select, $"WHERE genreId = {id}")?.FirstOrDefault() ?? throw new Exception("Genre Id returned Null");
-                exitCode = view.DeleteConfirmation(genre.GenreName);
+                name = genre.GenreName;
             }
 
-            if (exitCode == 1)
+            exitCode = view.DeleteConfirmation(name);
+            if (exitCode != 1) return exitCode;
+
+            // Delete record if user confirms
+            if (typeof(T) == typeof(Customer))
             {
-                if (typeof(T) == typeof(Customer))
-                {
-                    storageManager.Customers(SQLAction.Delete, $"WHERE customerId = {id}");
-                }
-                else if (typeof(T) == typeof(Concert))
-                {
-                    storageManager.Concerts(SQLAction.Delete, $"WHERE concertId = {id}");
-                }
-                else if (typeof(T) == typeof(City))
-                {
-                    storageManager.Cities(SQLAction.Delete, $"WHERE cityId = {id}");
-                }
-                else if (typeof(T) == typeof(Location))
-                {
-                    storageManager.Locations(SQLAction.Delete, $"WHERE locationId = {id}");
-                }
-                else if (typeof(T) == typeof(CustomerAddress))
-                {
-                    storageManager.CustomerAddresses(SQLAction.Delete, $"WHERE addressId = {id}");
-                }
-                else if (typeof(T) == typeof(Sale))
-                {
-                    storageManager.Sales(SQLAction.Delete, $"WHERE saleId = {id}");
-                }
-                else if (typeof(T) == typeof(ConcertGenre))
-                {
-                    storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {id}");
-                }
-                else if (typeof(T) == typeof(Genre))
-                {
-                    storageManager.Genres(SQLAction.Delete, $"WHERE genreId = {id}");
-                }
+                storageManager.Customers(SQLAction.Delete, $"WHERE customerId = {id}");
+            }
+            else if (typeof(T) == typeof(Concert))
+            {
+                storageManager.Concerts(SQLAction.Delete, $"WHERE concertId = {id}");
+            }
+            else if (typeof(T) == typeof(City))
+            {
+                storageManager.Cities(SQLAction.Delete, $"WHERE cityId = {id}");
+            }
+            else if (typeof(T) == typeof(Location))
+            {
+                storageManager.Locations(SQLAction.Delete, $"WHERE locationId = {id}");
+            }
+            else if (typeof(T) == typeof(CustomerAddress))
+            {
+                storageManager.CustomerAddresses(SQLAction.Delete, $"WHERE addressId = {id}");
+            }
+            else if (typeof(T) == typeof(Sale))
+            {
+                storageManager.Sales(SQLAction.Delete, $"WHERE saleId = {id}");
+            }
+            else if (typeof(T) == typeof(ConcertGenre))
+            {
+                storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {id}");
+            }
+            else if (typeof(T) == typeof(Genre))
+            {
+                storageManager.Genres(SQLAction.Delete, $"WHERE genreId = {id}");
             }
 
             return exitCode;
@@ -377,6 +392,7 @@ namespace TicketBookingApp
                 // User input handling logic
                 int emptyValues = 0;
                 int emptyProperty = -1;
+                // Get which values are empty
                 if (string.IsNullOrEmpty(newCustomer.CustomerFirstName))
                 {
                     emptyProperty = 0;
@@ -398,6 +414,7 @@ namespace TicketBookingApp
                     emptyValues++;
                 }
 
+                // Check each value's length and other necessities
                 if (emptyValues > 1)
                 {
                     errorCode = 1;
@@ -437,10 +454,12 @@ namespace TicketBookingApp
                 break;
             }
 
+            // If it is not registering, edit existing addresses, then give option make a new address.
             if (existing.CustomerId != -1)
             {
                 List<CustomerAddress>? existingAddresses = storageManager.CustomerAddresses(SQLAction.Select, "WHERE customerId = @id", new() { { "@id", existing.CustomerId } });
 
+                // Get amount of existing addresses
                 int repeats = existingAddresses != null ? Math.Max(existingAddresses.Count + 1, 1) : 1;
                 errorCode = 0;
 
@@ -714,6 +733,7 @@ namespace TicketBookingApp
 
         private static void EditConcertScreen(int? concertId = null)
         {
+            // Get full concert details
             Concert? concert = null;
             if (concertId != null) concert = storageManager.Concerts(SQLAction.Select, $"WHERE concertId = {concertId}")?.FirstOrDefault() ?? throw new Exception("ConcertId returned null");
 
@@ -721,6 +741,7 @@ namespace TicketBookingApp
             List<Genre> newGenres = new();
             Concert newConcert;
 
+            // First page value loops
             while (true)
             {
                 var tuple = view.EditConcertDetailsPage1(errorCode, concert);
@@ -732,6 +753,7 @@ namespace TicketBookingApp
                 int genreErrors = newConcert.ConcertId;
                 int locationErrors = newConcert.LocationId;
 
+                // Check which values are empty
                 int emptyValues = 0;
                 int emptyProperty = -1;
                 if (string.IsNullOrEmpty(newConcert.ConcertName))
@@ -755,6 +777,7 @@ namespace TicketBookingApp
                     emptyValues++;
                 }
 
+                // Give method error codes if the values are not accepted
                 if (emptyValues > 1)
                 {
                     errorCode = 1;
@@ -789,6 +812,7 @@ namespace TicketBookingApp
                 break;
             }
 
+            // Second page value loops
             errorCode = 0;
             while (true)
             {
@@ -798,6 +822,9 @@ namespace TicketBookingApp
 
                 int errors = additionConcert.ConcertId;
 
+                // All values are numbers based so I decided to have a binary-like system
+                // to determine which missing values to display error codes for.
+                // Also checks other errors
                 if ((errors - 1) % 2 == 0)
                 {
                     errorCode = 2;
@@ -848,6 +875,7 @@ namespace TicketBookingApp
 
             loading.Start();
 
+            // Insert concert details
             if (concertId == null)
             {
                 storageManager.Concerts(SQLAction.Insert, insertConcert: newConcert);
@@ -863,6 +891,7 @@ namespace TicketBookingApp
 
             int newId = concertId ?? throw new Exception("concertId was null");
 
+            // Insert genres
             List<ConcertGenre> newConcertGenres = newGenres.Select(g => g.ToConcertGenre(newId)).ToList();
 
             storageManager.ConcertGenres(SQLAction.Delete, $"WHERE concertId = {newId}");
@@ -871,6 +900,7 @@ namespace TicketBookingApp
                 storageManager.ConcertGenres(SQLAction.Insert, insertConcertGenre: newConcertGenres[i]);
             }
 
+            // Load for human response time
             Thread.Sleep(500);
 
             loading.Interrupt();
@@ -928,6 +958,7 @@ namespace TicketBookingApp
 
         private static void EditLocationScreen(int? locationId = null)
         {
+            // Get location details if exists
             Location? existing = null;
             if (locationId != null) existing = storageManager.Locations(SQLAction.Select, $"WHERE locationId = {locationId}")?.FirstOrDefault() ?? throw new Exception("LocationId returned null");
 
@@ -942,6 +973,7 @@ namespace TicketBookingApp
                 int cityIdErrors = location.CityId;
                 int capacityErrors = location.LocationCapacity;
 
+                // Determine which values are empty
                 int emptyValues = 0;
                 int emptyProperty = -1;
                 if (string.IsNullOrEmpty(location.LocationName))
@@ -965,6 +997,7 @@ namespace TicketBookingApp
                     emptyValues++;
                 }
 
+                // Display appropriate error codes for incorrect values
                 if (emptyValues > 1)
                 {
                     errorCode = 1;
@@ -1004,6 +1037,7 @@ namespace TicketBookingApp
                 break;
             }
 
+            // Insert/Update values
             string message = locationId == null ? "Creating Location" : "Updating Location";
 
             Console.Clear();
@@ -1039,6 +1073,7 @@ namespace TicketBookingApp
 
             if (ticketAmount == 0) return;
 
+            // ID is -1 because it doesnt get inputted anyway
             Sale insert = new(-1, currentUser.CustomerId, concertId, ticketAmount);
 
             storageManager.Sales(SQLAction.Insert, insertSale: insert);
@@ -1146,6 +1181,7 @@ namespace TicketBookingApp
 
     public static class StringExtensions
     {
+        // Used this class to use this method directly called from strings
         public static bool CheckLength(this string input, int min, int max)
         {
             return (input.Length >= min) && (input.Length <= max);
