@@ -4,7 +4,8 @@ A C#/.NET based ticket booking system, designed to manage sales to concerts and 
 ## Default Logins
 Admin:  
 - Username: ```Admin```
-- Password: ```Admin```  
+- Password: ```Admin```
+
 Standard user:
 - Username: ```Felix```
 - Password: ```Felix```  
